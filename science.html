@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>理科準備室</title>
+<style>
+html,body{
+  margin:0;
+  background:#000;
+  overflow:hidden;
+}
+canvas{
+  display:block;
+  width:100vw;
+  height:100vh;
+  image-rendering: pixelated;
+}
+button{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:10px 20px;
+  border:none;
+  background:#222;
+  color:#fff;
+  font-size:14px;
+  border-radius:6px;
+}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<button onclick="toggle()">昼 / 夜</button>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+let W, H;
+function resize(){
+  W = canvas.width = 240;
+  H = canvas.height = 400;
+}
+resize();
+
+let mode = "day";
+let t = 0;
+let whaleX = -100;
+
+function toggle(){
+  mode = (mode === "day") ? "night" : "day";
+}
+
+function drawPixel(x,y,c){
+  ctx.fillStyle = c;
+  ctx.fillRect(x,y,1,1);
+}
+
+function draw(){
+  t += 0.03;
+
+  // 背景
+  if(mode==="day"){
+    ctx.fillStyle="#f2e6c9";
+  }else{
+    ctx.fillStyle="#0b0f1a";
+  }
+  ctx.fillRect(0,0,W,H);
+
+  // 部屋枠
+  ctx.fillStyle = "#3a3a3a";
+  ctx.fillRect(20,40,200,300);
+
+  // 窓
+  ctx.fillStyle = (mode==="day") ? "#fff4c0" : "#223355";
+  ctx.fillRect(60,60,120,80);
+
+  // カーテン（揺れ）
+  let sway = Math.sin(t)*4;
+  ctx.fillStyle="#dcdcdc";
+  ctx.fillRect(60+sway,60,20,80);
+  ctx.fillRect(160+sway,60,20,80);
+
+  // 机
+  ctx.fillStyle="#6b4f2a";
+  ctx.fillRect(80,200,80,10);
+
+  // 散らかった物（ランダム風固定）
+  for(let i=0;i<40;i++){
+    let x = 30 + (i*13)%180;
+    let y = 150 + (i*17)%160;
+    ctx.fillStyle = ["#888","#aaa","#bbb","#999"][i%4];
+    ctx.fillRect(x,y,3,3);
+  }
+
+  // ガラス反射
+  let sparkle = (Math.sin(t*3)+1)/2;
+  ctx.fillStyle = `rgba(255,255,255,${sparkle*0.6})`;
+  ctx.fillRect(100,160,4,4);
+  ctx.fillRect(130,180,3,3);
+
+  // 光
+  if(mode==="day"){
+    ctx.fillStyle="rgba(255,240,180,0.25)";
+    ctx.fillRect(60,60,120,200);
+  }else{
+    ctx.fillStyle="rgba(120,150,255,0.15)";
+    ctx.fillRect(60,60,120,200);
+  }
+
+  // 夜の影（クジラ的）
+  if(mode==="night"){
+    whaleX += 0.5;
+    if(whaleX > W+100) whaleX = -120;
+
+    ctx.fillStyle="rgba(0,0,0,0.6)";
+    ctx.beginPath();
+    ctx.ellipse(whaleX,90,40,12,0,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>
