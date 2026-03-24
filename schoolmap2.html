@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>夜の学校 — 完全マップ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&family=Shippori+Mincho:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --box-sizing: border-box;
+  --color-scheme: light;
+  --bg: #08080f;
+  --bg2: #0e0e18;
+  --bg3: #141420;
+  --grid: #1a1a2e;
+  --wall: #3a3a58;
+  --wall-bright: #5a5a80;
+  --text: #c8c4b8;
+  --text-dim: #6a6660;
+  --text-bright: #e8e4d8;
+  --border: #2a2a40;
+
+–c-safe:   #8aaecc;
+–c-key:    #c9b46a;
+–c-nature: #8cc99c;
+–c-danger: #c97b7b;
+–c-super:  #b08cc9;
+–c-hidden: #7ac9c0;
+–c-normal: #7a8898;
+–c-empty:  #404858;
+–c-ritual: #c9a07a;
+–c-ygreen: #b8c96a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scrollbar-color:var(–border) var(–bg)}
+body{background:var(–bg);color:var(–text);font-family:‘Noto Serif JP’,serif;font-size:13px;line-height:1.8;min-height:100vh;overflow-x:hidden}
+body::after{content:’’;position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(26,26,46,0.5) 39px,rgba(26,26,46,0.5) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(26,26,46,0.5) 39px,rgba(26,26,46,0.5) 40px);pointer-events:none;z-index:0;opacity:.4}
+
+/* LAYOUT */
+.app{position:relative;z-index:1;display:grid;grid-template-rows:auto auto 1fr auto;min-height:100vh}
+
+/* HEADER */
+.hdr{padding:40px 32px 28px;border-bottom:1px solid var(–border);text-align:center;background:linear-gradient(to bottom,rgba(12,12,24,0.9),transparent)}
+.hdr-sub{font-size:10px;letter-spacing:.35em;color:var(–text-dim);margin-bottom:14px}
+.hdr h1{font-family:‘Shippori Mincho’,serif;font-size:clamp(18px,3vw,28px);font-weight:700;color:var(–text-bright);margin-bottom:8px}
+.hdr p{font-size:11px;color:var(–text-dim);letter-spacing:.1em}
+
+/* TABS */
+.tabs-wrap{display:flex;gap:0;padding:0 32px;border-bottom:1px solid var(–border);background:var(–bg2);overflow-x:auto}
+.tab{padding:12px 18px;font-size:11px;letter-spacing:.15em;color:var(–text-dim);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .2s,border-color .2s}
+.tab:hover{color:var(–text)}
+.tab.active{color:var(–c-key);border-bottom-color:var(–c-key)}
+.tab-sep{padding:12px 6px;color:var(–border);font-size:10px;align-self:center}
+
+/* MAIN */
+.main{display:grid;grid-template-columns:1fr 280px;gap:0;height:calc(100vh - 180px);min-height:500px}
+@media(max-width:768px){.main{grid-template-columns:1fr;grid-template-rows:1fr auto;height:auto}}
+
+/* MAP CANVAS */
+.canvas{position:relative;overflow:hidden;background:var(–bg);border-right:1px solid var(–border)}
+.canvas svg{width:100%;height:100%;display:block}
+.floor-label{position:absolute;top:14px;left:16px;font-size:10px;letter-spacing:.25em;color:var(–text-dim)}
+
+/* TOOLTIP */
+.room-tooltip{position:absolute;top:14px;right:14px;background:rgba(8,8,16,.95);border:1px solid var(–border);border-radius:3px;padding:14px 16px;max-width:220px;pointer-events:none;opacity:0;transition:opacity .2s;z-index:10}
+.room-tooltip.show{opacity:1}
+.tt-name{font-family:‘Shippori Mincho’,serif;font-size:13px;font-weight:700;color:var(–text-bright);margin-bottom:4px}
+.tt-src{font-size:9px;letter-spacing:.2em;margin-bottom:8px}
+.tt-desc{font-size:11.5px;color:var(–text);line-height:1.7}
+
+/* SIDE PANEL */
+.side{background:var(–bg2);overflow-y:auto;display:flex;flex-direction:column}
+.side-hdr{padding:16px 18px;border-bottom:1px solid var(–border);font-size:10px;letter-spacing:.25em;color:var(–text-dim)}
+.side-content{padding:16px 18px;flex:1}
+.side-room-name{font-family:‘Shippori Mincho’,serif;font-size:16px;font-weight:700;color:var(–text-bright);margin-bottom:4px}
+.side-room-tag{display:inline-block;font-size:9px;letter-spacing:.15em;padding:2px 7px;border:1px solid;border-radius:2px;margin-bottom:10px}
+.side-room-desc{font-size:12.5px;color:var(–text);line-height:1.8;margin-bottom:12px}
+.side-quote{border-left:2px solid var(–border);padding:8px 12px;font-size:11.5px;color:var(–text-dim);font-style:italic;margin:10px 0}
+.side-empty{color:var(–text-dim);font-size:12px;padding:20px 0}
+
+/* LEGEND */
+.legend{padding:14px 32px;border-top:1px solid var(–border);background:var(–bg2);display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.legend-title{font-size:10px;letter-spacing:.25em;color:var(–text-dim);margin-right:8px}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(–text-dim)}
+.leg-dot{width:10px;height:10px;border-radius:1px;flex-shrink:0}
+.leg-line{width:20px;height:1px;flex-shrink:0}
+
+/* SVG ROOM STYLES */
+.room{cursor:pointer;transition:opacity .15s}
+.room:hover .room-fill{opacity:.5!important}
+.room:hover .room-stroke{stroke-width:1.5!important}
+.room-label{pointer-events:none;font-family:‘Noto Serif JP’,serif}
+.dim-label{fill:#4a4a60;font-size:8px;letter-spacing:.1em}
+
+/* ANNOTATIONS */
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+.story-marker{animation:pulse 3s ease-in-out infinite}
+
+/* COMPASS */
+.compass{position:absolute;bottom:16px;left:16px;opacity:.4}
+</style>
+
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+
+<div class="hdr">
+  <div class="hdr-sub">夜の学校 · 刺蛾結社通信 · 完全建物図解</div>
+  <h1>夜の学校　完全マップ</h1>
+  <p>両作品の記述を統合し、書かれていない部分を整合性に基づき補完した建物見取り図</p>
+</div>
+
+<!-- TABS -->
+
+<div class="tabs-wrap">
+  <div class="tab active" data-floor="campus">全体図</div>
+  <div class="tab-sep">|</div>
+  <div class="tab" data-floor="b1f">B1F</div>
+  <div class="tab" data-floor="1f">1F</div>
+  <div class="tab" data-floor="2f">2F</div>
+  <div class="tab" data-floor="3f">3F</div>
+  <div class="tab" data-floor="4f">4F</div>
+  <div class="tab" data-floor="roof">屋上</div>
+  <div class="tab-sep">|</div>
+  <div class="tab" data-floor="b2">二号館</div>
+  <div class="tab" data-floor="gym">体育館</div>
+</div>
+
+<!-- MAIN -->
+
+<div class="main">
+  <div class="canvas" id="canvas">
+    <div class="floor-label" id="floorLabel">全体図</div>
+    <svg id="mapSvg" viewBox="0 0 900 480" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="room-tooltip" id="tooltip">
+      <div class="tt-name" id="tt-name"></div>
+      <div class="tt-src" id="tt-src"></div>
+      <div class="tt-desc" id="tt-desc"></div>
+    </div>
+  </div>
+  <div class="side">
+    <div class="side-hdr">ROOM INFO</div>
+    <div class="side-content" id="sideContent">
+      <div class="side-empty">部屋をクリックすると詳細が表示されます</div>
+    </div>
+  </div>
+</div>
+
+<!-- LEGEND -->
+
+<div class="legend">
+  <span class="legend-title">凡例</span>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--c-safe);opacity:.7"></div>安全・聖域</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--c-key);opacity:.7"></div>重要場面</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--c-nature);opacity:.7"></div>自然・生命</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--c-danger);opacity:.7"></div>危険・死隣接</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--c-super);opacity:.7"></div>超自然・怪異</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--c-hidden);opacity:.7"></div>隠秘・異空間</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--c-ritual);opacity:.7"></div>儀式・閾値</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--c-normal);opacity:.7"></div>通常室</div>
+  <div class="leg-item"><div class="leg-dot" style="background:var(--c-empty);opacity:.7"></div>空室・未詳</div>
+  <div class="leg-item"><div class="leg-line" style="background:var(--c-key);opacity:.6"></div>語り手の経路</div>
+  <div class="leg-item" style="margin-left:12px;font-size:9px;color:var(--text-dim)">◆=作品1記述　★=作品2記述　◇=両作品　○=補完</div>
+</div>
+
+</div><!-- .app -->
+
+<script>
+// =====================================================
+// ROOM DATA
+// Each room: {id, name, x, y, w, h, color, src, desc, quote, floor}
+// src: '1'=テキスト, '2'=刺蛾結社, 'b'=both, 'i'=inferred
+// =====================================================
+
+const COLORS = {
+  safe:   '#8aaecc',
+  key:    '#c9b46a',
+  nature: '#8cc99c',
+  danger: '#c97b7b',
+  super:  '#b08cc9',
+  hidden: '#7ac9c0',
+  ritual: '#c9a07a',
+  normal: '#7a8898',
+  empty:  '#404858',
+  ygreen: '#b8c96a',
+};
+
+const SRC_LABELS = {
+  '1': { label: '◆ テキスト', color: '#8aaecc' },
+  '2': { label: '★ 刺蛾結社通信', color: '#c9b46a' },
+  'b': { label: '◇ 両作品', color: '#8cc99c' },
+  'i': { label: '○ 補完', color: '#6a7a6a' },
+};
+
+// =====================================================
+// FLOOR DATA: each floor is a function returning SVG string + rooms array
+// =====================================================
+
+const floors = {
+
+// ------- CAMPUS OVERVIEW -------
+campus: {
+  label: '全体図 — キャンパス俯瞰',
+  viewBox: '0 0 900 500',
+  rooms: [
+    { id:'gr', name:'グラウンド（人工芝）', x:30,y:18,w:360,h:110, color:'nature', src:'2',
+      desc:'人工芝が敷かれた校庭。4章チューリップにて語り手と君が寝そべる場面の舞台。「全身土まみれだったんだもの」',
+      quote:'人工芝で寝そべった時、君は不愉快な顔をしていた。全身土まみれだったんだもの。' },
+    { id:'gate', name:'正門', x:185,y:125,w:50,h:20, color:'ritual', src:'i',
+      desc:'校舎へと続く正門。補完。夜の学校への入口として機能する閾値的空間。' },
+    { id:'main', name:'本館（B1F〜4F＋屋上）', x:30,y:148,w:500,h:200, color:'key', src:'b',
+      desc:'物語の主舞台。B1Fの地下通路から屋上まで、全ての主要場面がここで展開される。エレベーター・事務室・各学年教室・理科室・図書室を含む。',
+      quote:'右手にはエレベーターと、奥に事務室。' },
+    { id:'bridge', name:'渡り廊下', x:532,y:248,w:58,h:30, color:'normal', src:'i',
+      desc:'本館と二号館を繋ぐ渡り廊下。補完。幽霊が出るとされる二号館への経路。' },
+    { id:'b2', name:'二号館', x:592,y:178,w:165,h:200, color:'super', src:'2',
+      desc:'昼休みでも幽霊が出るとされる建物。生徒会室・体育倉庫を含む。「二号館って昼休みでも幽霊出るんですよ」',
+      quote:'二号館って昼休みでも幽霊出るんですよ。なんで気がついたらわ、虎ですね。' },
+    { id:'gym', name:'体育館', x:592,y:382,w:165,h:100, color:'ygreen', src:'2',
+      desc:'後夜祭（飛龍祭405日目）の会場。2階ギャラリーから語り手が照明を担当。蛾（彼）とリアルゴールドの選択が起きる場所。',
+      quote:'私は照明を担当していた。2階のスポット係は暑いし、寒い。特等席から見られるから、悪くはないけど。' },
+    { id:'courtyard', name:'中庭', x:532,y:178,w:58,h:68, color:'nature', src:'i',
+      desc:'本館と二号館の間の中庭。補完。両建物を繋ぐ空間。植栽があると推察される。' },
+    { id:'tunnel_exit', name:'地下通路出口（→駅方面）', x:30,y:355,w:160,h:35, color:'ritual', src:'2',
+      desc:'刺蛾結社通信冒頭、語り手がリアルゴールドと電車に向かう地下通路の出口。駅に繋がる。「地下通路を通って駅へと向かう。片道切符を手にしている。」',
+      quote:'地下通路を通って駅へと向かう。片道切符を手にしている。汗と困惑で折れてぐちゃぐちゃ。' },
+    { id:'station_arrow', name:'駅方面→', x:200,y:355,w:60,h:35, color:'ritual', src:'2', desc:'' },
+  ],
+  paths: [
+    { d:'M280 148 L280 355', color:'#c9b46a', dash:'6,4', label:'地下通路（本館B1F→駅）' },
+    { d:'M150 148 L150 345', color:'#c9a07a', dash:'3,3', label:'語り手の主な経路' },
+  ]
+},
+
+// ------- B1F -------
+b1f: {
+  label: 'B1F — 地下',
+  viewBox: '0 0 900 340',
+  rooms: [
+    { id:'sub_outer', name:'', x:10,y:20,w:680,h:280, color:'empty', src:'i', isOuter:true,
+      desc:'', quote:'' },
+    { id:'sub_tunnel', name:'地下通路', x:20,y:90,w:360,h:70, color:'ritual', src:'2',
+      desc:'本館地下から駅へと続く長い地下通路。刺蛾結社通信の冒頭で、語り手がリアルゴールドと電車に向かう際に通る。「地下通路を通って駅へと向かう」',
+      quote:'地下通路を通って駅へと向かう。片道切符を手にしている。汗と困惑で折れてぐちゃぐちゃ。' },
+    { id:'tunnel_arrow', name:'→ 駅', x:388,y:90,w:60,h:70, color:'ritual', src:'2', desc:'駅方向', quote:'' },
+    { id:'room015', name:'015号室', x:400,y:90,w:155,h:120, color:'danger', src:'1',
+      desc:'電気のない暗い室。夜の学校探索中、カバに追われた語り手が追い詰められた場所。「ここは015だし、電気がついてなくて真っ暗なのに、向こうから来る」。奥の扉が図書室（4F吹き抜け下部）に繋がっている。夢と現実が最初に溶けた場所。',
+      quote:'ここは015だし、暗なのに、向こうから来る。あ、なんだ。奥の扉で向こうの部屋に逃げれるじゃん。' },
+    { id:'b1_stairs', name:'非常階段', x:558,y:90,w:60,h:120, color:'normal', src:'i',
+      desc:'補完。B1Fから各階への非常階段。', quote:'' },
+    { id:'b1_elev', name:'EV機械室', x:620,y:90,w:65,h:60, color:'empty', src:'i',
+      desc:'補完。エレベーター機械室。1Fのエレベーターが電気なしで動かないのはこの設備が機能していないため。', quote:'' },
+    { id:'b1_utility', name:'設備・機械室', x:20,y:172,w:180,h:120, color:'empty', src:'i',
+      desc:'補完。学校設備の機械類が収められた部屋。カバが水の音に引き寄せられる際、この付近で水の流れる音がしたと推察される。',
+      quote:'地面が（自分の鼓動ではないことで）揺れて、水の音がした。今いるところより低いところで水が流れているようだった。' },
+    { id:'b1_storage', name:'倉庫', x:202,y:172,w:120,h:120, color:'empty', src:'i',
+      desc:'補完。学校用具の倉庫。', quote:'' },
+    { id:'b1_pipe', name:'配管・水路', x:324,y:172,w:230,h:30, color:'nature', src:'1',
+      desc:'カバたちが引き寄せられた水の流れる場所。地下に水路が存在する。',
+      quote:'地面が揺れて、水の音がした。今いるところより低いところで水が流れているようだった。彼らは水の元に歩いて行った。' },
+  ],
+  paths: [
+    { d:'M380 125 L400 125', color:'#c9a07a', dash:'4,2', label:'015号室への逃走' },
+    { d:'M440 200 L440 290', color:'#8aaecc', dash:'5,3', label:'水の流れ（カバを誘う）' },
+  ]
+},
+
+// ------- 1F -------
+'1f': {
+  label: '1F — 一階',
+  viewBox: '0 0 900 340',
+  rooms: [
+    { id:'1f_outer', name:'', x:10,y:10,w:740,h:295, color:'empty', src:'i', isOuter:true, desc:'', quote:'' },
+    // SOUTH SIDE (offices, entrance) y=215-305
+    { id:'genkan', name:'玄関ホール', x:20,y:220,w:140,h:80, color:'key', src:'1',
+      desc:'正面玄関。雨の夜、語り手が外に出ようとするが扉が開かない。「扉が開かない。まあ、そうだよね。」ベトベトした感触の夜の入口。探索の出発点。',
+      quote:'玄関。知らないけど知っている。雨。ベトベトしている。扉が開かない。まあ、そうだよね。出口を探そう。' },
+    { id:'geta', name:'下駄箱', x:162,y:250,w:70,h:50, color:'normal', src:'i',
+      desc:'補完。靴を入れる下駄箱。全て空になっていると推察される。', quote:'' },
+    { id:'ev_1f', name:'エレベーター', x:234,y:220,w:55,h:80, color:'empty', src:'1',
+      desc:'玄関の右手にあるエレベーター。電気がついておらず動かない。最初の「探索」で真っ先に試みて失敗する場所。',
+      quote:'右手にはエレベーターと、奥に事務室。一応行ってみる？エレベーター、まあ電気つかないよね。' },
+    { id:'jimusitu', name:'事務室', x:291,y:220,w:155,h:80, color:'safe', src:'1',
+      desc:'神棚がある事務室。「ちょっと暖かい心地がする」。カバから守られる聖域として機能する。外からカバが歩いている音がするが、中にいれば大丈夫。',
+      quote:'事務室。空っぽ。神棚なんてあったんだ。ちょっと暖かい心地がする。外に誰かいるの？ゆっくり歩いてる音が聞こえる。怖い。けど中にいれば大丈夫。' },
+    { id:'kouchou', name:'校長室', x:448,y:220,w:95,h:80, color:'normal', src:'i',
+      desc:'補完。校長室。夜は無人。', quote:'' },
+    { id:'shokuinshitu', name:'職員室', x:545,y:220,w:110,h:80, color:'normal', src:'i',
+      desc:'補完。教師たちの職員室。夜は誰もいない。', quote:'' },
+    { id:'hokenshitsu', name:'保健室', x:657,y:220,w:90,h:80, color:'normal', src:'i',
+      desc:'補完。保健室。怪我をしたときに行く場所。ガラスが飛散して体を刺された後の行き場は、ここには来なかった。', quote:'' },
+    // CORRIDOR y=185-218
+    { id:'1f_corridor', name:'廊下', x:20,y:185,w:727,h:33, color:'empty', src:'1',
+      desc:'一階の廊下。カバが巡回する場所。「ゆっくり歩いてる音が聞こえる」。掃除用具入れが廊下の一角にある。',
+      quote:'ゆっくり歩いてる音が聞こえる。怖い。' },
+    { id:'souji', name:'掃除用具入れ', x:235,y:185,w:45,h:33, color:'danger', src:'1',
+      desc:'カバに追われた語り手が最後に隠れた場所。「狭いし寒い。もうだめっぽい。」カバが増殖して教室にも入ってくるようになった後、数時間ここに籠もる。',
+      quote:'久々の学校でこれとか、災難だね。狭いし寒い。もうだめっぽい。たくさんの人の呪詛が流れてくる。' },
+    // NORTH SIDE (1-nen classrooms) y=12-183
+    { id:'nen1_1', name:'一年1組', x:20,y:12,w:105,h:171, color:'normal', src:'1',
+      desc:'補完。一年生の教室。夜は無人。', quote:'' },
+    { id:'nen1_2', name:'一年2組', x:127,y:12,w:105,h:171, color:'normal', src:'1',
+      desc:'補完。一年生の教室。夜は無人。', quote:'' },
+    { id:'nen1_3', name:'一年3組', x:234,y:12,w:105,h:171, color:'key', src:'1',
+      desc:'鍵のかかった箱が机に置かれていた教室。拾った鍵で箱を開けると手紙が入っていた。「悪趣味だね」と語り手が言う手紙の内容が書かれていた。物語の最初の謎が始まる場所。',
+      quote:'そういえば鍵があったね？開くかな？ふふ…開くんだねこれ。「あの子を忘れてから数年経った。どれだけ生きてもひとりぼっち。」' },
+    { id:'nen1_4', name:'一年4組', x:341,y:12,w:105,h:171, color:'key', src:'1',
+      desc:'空色（水色・青）に染められた教室。「組、空色に染められている」。この不思議な色の教室は、語り手が主に探索する場所の中で最も印象的な「色の記憶」として残る。黒服の君がいた可能性。',
+      quote:'組、空色に染められている。' },
+    { id:'nen1_5', name:'一年5組', x:448,y:12,w:105,h:171, color:'normal', src:'1',
+      desc:'補完。一年生の教室。夜は無人。', quote:'' },
+    { id:'nen1_6', name:'一年6組', x:555,y:12,w:105,h:171, color:'normal', src:'1',
+      desc:'補完。一年生の教室。夜は無人。', quote:'' },
+    { id:'nen1_special', name:'花子さん的存在の出現場所', x:662,y:12,w:85,h:171, color:'super', src:'1',
+      desc:'一階に降りてきた語り手が、見知らぬ女性的存在と出会う場所。「わたしはあの子が知らなくて、君にある部分の塊。君だけの色。君だけの道。君だけの傷。さあ、カバが泳いでくるよ。」',
+      quote:'一階に降りると、何かいた。人？あの子じゃない。「わたしはあの子が知らなくて、君にある部分の塊。」' },
+    // STAIRCASE
+    { id:'stairs_1f', name:'階段', x:750,y:10,w:60,h:295, color:'normal', src:'i',
+      desc:'補完。各階への階段。', quote:'' },
+  ],
+  paths: [
+    { d:'M90 185 L90 185 L90 300 L20 300 L20 185', color:'#c9b46a', dash:'5,3', label:'語り手の探索経路' },
+    { d:'M 360 185 L 360 250 L 291 250', color:'#c97b7b', dash:'3,3', label:'カバの巡回' },
+  ]
+},
+
+// ------- 2F -------
+'2f': {
+  label: '2F — 二階',
+  viewBox: '0 0 900 340',
+  rooms: [
+    { id:'2f_outer', name:'', x:10,y:10,w:740,h:295, color:'empty', src:'i', isOuter:true, desc:'', quote:'' },
+    // SOUTH SIDE y=220-305
+    { id:'kateika', name:'家庭科室', x:20,y:220,w:160,h:80, color:'key', src:'1',
+      desc:'ちょっと甘い匂いがする部屋。食器が整然と並んでいる。「箸、スプーン、フォーク、お茶碗、お皿、コップ」。食べ物はない。生活感があるが空虚。',
+      quote:'ちょっと甘い匂いがする。食器が並んでる。箸、スプーン、フォーク、お茶碗、お皿、コップ。食べ物もないし、持っていっても意味ないかな。' },
+    { id:'choriji', name:'調理実習室', x:182,y:220,w:110,h:80, color:'normal', src:'i',
+      desc:'補完。家庭科室に隣接する調理実習室。実習用のコンロや調理器具が並ぶ。夜は無人で静か。', quote:'' },
+    { id:'ongakushitsu', name:'音楽室', x:294,y:220,w:120,h:80, color:'normal', src:'i',
+      desc:'補完。音楽室。ピアノが置かれている。3Fの理科室に隠し森を隠しているピアノとは別のもの。刺蛾結社通信の「琴の音色」の伏線的空間かもしれない。', quote:'' },
+    { id:'bijutsushitsu', name:'美術室', x:416,y:220,w:110,h:80, color:'normal', src:'i',
+      desc:'補完。美術室。作品や絵の具が残されている。「宗教画」という概念が登場する両作品において、美の実践場としての象徴的意味を持つ。', quote:'' },
+    { id:'2f_wc', name:'便所', x:528,y:250,w:70,h:50, color:'empty', src:'i',
+      desc:'補完。二階のトイレ。', quote:'' },
+    { id:'watari_2f', name:'渡り廊下入口', x:657,y:220,w:90,h:80, color:'normal', src:'i',
+      desc:'補完。二号館へと続く渡り廊下の本館側入口。幽霊が出る二号館へ向かうための通路。', quote:'' },
+    // CORRIDOR y=185-218
+    { id:'2f_corridor', name:'廊下', x:20,y:185,w:727,h:33, color:'empty', src:'i',
+      desc:'二階の廊下。「高の教室を順番に見てみる？」という探索の場。', quote:'' },
+    // NORTH SIDE (2-nen classrooms) y=12-183
+    { id:'nen2_1', name:'二年1組\n（何もない）', x:20,y:12,w:105,h:171, color:'empty', src:'1',
+      desc:'「何もない」と描写される教室の一つ。人の痕跡が完全に消えている。',
+      quote:'組、何もない。' },
+    { id:'nen2_2', name:'二年2組\n（ベチャベチャ）', x:127,y:12,w:105,h:171, color:'key', src:'1',
+      desc:'窓が開いたまま放置され、雨で濡れてベチャベチャになっている教室。「寒いね」と語り手が言う。雨と外の侵入が最も激しい部屋。',
+      quote:'組、窓が空いててベチャベチャになってる。寒いね。' },
+    { id:'nen2_3', name:'二年3組\n（何もない）', x:234,y:12,w:105,h:171, color:'empty', src:'1',
+      desc:'「何もない」と描写される教室の一つ。机も椅子もない空虚な部屋。',
+      quote:'組、何もない。' },
+    { id:'nen2_4', name:'二年4組\n（机もない）', x:341,y:12,w:105,h:171, color:'empty', src:'1',
+      desc:'机も何もない、完全に空の教室。「なんなんだろう」と語り手が言う。最も剥ぎ取られた空間。',
+      quote:'組、机も何もない。なんなんだろう。' },
+    { id:'nen2_5', name:'二年5組\n（事務室の鍵）', x:448,y:12,w:105,h:171, color:'key', src:'1',
+      desc:'「事務室のって書いてない？」という鍵が落ちていた教室。事務室の鍵が上階にあるという謎。後で事務室に入って神棚を発見する伏線となる部屋。',
+      quote:'組、鍵。あれ、これ、事務室のって書いてない？あとで行ってみよっか。' },
+    { id:'nen2_6', name:'二年6組\n（普通）', x:555,y:12,w:105,h:171, color:'normal', src:'1',
+      desc:'「普通」と描写される唯一の教室。他が全て異常な中で、この教室だけが「普通」であることが逆に奇妙に感じられる。',
+      quote:'組、普通。' },
+    { id:'2f_tokubetsu', name:'特別教室\n（補完）', x:662,y:12,w:85,h:171, color:'normal', src:'i',
+      desc:'補完。二年生フロアの特別教室。内容は不明。', quote:'' },
+    { id:'stairs_2f', name:'階段', x:750,y:10,w:60,h:295, color:'normal', src:'i', desc:'補完。階段室。', quote:'' },
+    // でかい目 zone
+    { id:'ooki_me', name:'「でかい目」の領域', x:20,y:12,w:310,h:40, color:'danger', src:'1',
+      desc:'「でかい目！！怖かった…大丈夫？」と描写される何かが存在する上の階の空間。詳細は語られない。深層意識の象徴。語り手と黒服の君が恐れて退く場所。',
+      quote:'でかい目！！怖かった…大丈夫？うん、大丈夫。なんだったんだろうね、怖いね。' },
+  ],
+  paths: []
+},
+
+// ------- 3F -------
+'3f': {
+  label: '3F — 三階',
+  viewBox: '0 0 900 380',
+  rooms: [
+    { id:'3f_outer', name:'', x:10,y:10,w:740,h:295, color:'empty', src:'i', isOuter:true, desc:'', quote:'' },
+    // SOUTH SIDE
+    { id:'rikashitu', name:'理科室', x:20,y:220,w:185,h:80, color:'key', src:'b',
+      desc:'理科室。「隣には理科準備室」。奥にピアノがあり、それが隠し森への入口になっている（刺蛾結社通信）。カエルが飼育されている（「理科部が飼ってるやつだ。かわいいね。」）。',
+      quote:'理科室、隣には理科準備室。あれ、カエル？誰もいないのに、カエルはいるんだ。こんにちは。' },
+    { id:'rikajunbishitsu', name:'理科準備室', x:207,y:220,w:150,h:80, color:'safe', src:'1',
+      desc:'この部屋の窓だけが晴れている。やさしい風が吹く。「心地よい」。黒服の君が「うとうとしてる」場所。全作品を通じて最初の真の安息地。両作品に登場する理科室と繋がった平和な空間。',
+      quote:'あれ…？晴れてる。この部屋の窓だけ。やさしい風が吹いてる。心地よい。これまで普通だったのに、君は突然座り込んで、うとうとしてる。' },
+    { id:'seibushitsu', name:'生物室', x:359,y:220,w:120,h:80, color:'nature', src:'i',
+      desc:'補完。生物室。標本や飼育槽が並ぶ。理科室の隣に位置すると推察される。理科室の隠し森のカエルやその他生物との繋がりを持つ空間。', quote:'' },
+    { id:'kagakushitsu', name:'化学室', x:481,y:220,w:120,h:80, color:'normal', src:'1',
+      desc:'理科準備室に並んでいる「薬品」は化学室に由来すると推察。「薬品が並んでるけど、よくわかんないから触らないほうがいいかも」という記述に対応する場所。',
+      quote:'薬品が並んでるけど、よくわかんないから触らないほうがいいかも。' },
+    { id:'3f_wc', name:'便所', x:603,y:250,w:60,h:50, color:'empty', src:'i', desc:'補完。三階トイレ。', quote:'' },
+    { id:'3f_tokubetsu', name:'特別室（補完）', x:665,y:220,w:82,h:80, color:'normal', src:'i', desc:'補完。三階の特別教室。', quote:'' },
+    // CORRIDOR
+    { id:'3f_corridor', name:'廊下', x:20,y:185,w:727,h:33, color:'empty', src:'i', desc:'三階廊下。', quote:'' },
+    // NORTH SIDE (3-nen classrooms)
+    { id:'nen3_1', name:'三年1組', x:20,y:12,w:100,h:171, color:'normal', src:'1', desc:'補完。三年生の教室。', quote:'' },
+    { id:'nen3_2', name:'三年2組', x:122,y:12,w:100,h:171, color:'normal', src:'1', desc:'補完。三年生の教室。', quote:'' },
+    { id:'nen3_3', name:'三年3組', x:224,y:12,w:100,h:171, color:'normal', src:'1', desc:'補完。三年生の教室。', quote:'' },
+    { id:'nen3_4', name:'三年4組', x:326,y:12,w:100,h:171, color:'normal', src:'1', desc:'補完。三年生の教室。', quote:'' },
+    { id:'nen3_5', name:'三年5組', x:428,y:12,w:100,h:171, color:'normal', src:'1', desc:'補完。三年生の教室。', quote:'' },
+    { id:'nen3_6', name:'三年6組', x:530,y:12,w:100,h:171, color:'normal', src:'1', desc:'補完。三年生の教室。', quote:'' },
+    { id:'nen3_special', name:'音楽・芸術準備（補完）', x:632,y:12,w:115,h:171, color:'normal', src:'i', desc:'補完。三年フロアの準備室。', quote:'' },
+    { id:'stairs_3f', name:'階段', x:750,y:10,w:60,h:295, color:'normal', src:'i', desc:'補完。階段室。', quote:'' },
+    // HIDDEN FOREST (extends beyond building footprint)
+    { id:'kakushi_forest', name:'隠し森\n（ピアノの裏）', x:10,y:310,w:350,h:60, color:'hidden', src:'2',
+      desc:'理科室の奥、ピアノに隠されて存在する森。「意外と知られていないんですけど、理科室の奥ってちょっとした森があるんですよね。ピアノに隠されてるけど。たしか16期の時？の理科部が作ったやつみたいです。」オランウータン・カエル（赤い危険な種）・虎（李徴）が存在する。内部にミニストップが営業中。物理的建物の外に「超える」空間。',
+      quote:'理科室の奥ってちょっとした森があるんですよね。ピアノに隠されてるけど。そう、全然オランウータンとかもいて。' },
+    { id:'mini_stop', name:'ミニストップ\n（森の中）', x:360,y:310,w:140,h:60, color:'hidden', src:'2',
+      desc:'隠し森の中で営業しているミニストップ。「結構品揃えも多くていい感じです。ただホットスナックは置いてないので」。森の中の現実の商業空間という超現実的な存在。',
+      quote:'森の中に入ると、ミニストップが営業しています。結構品揃えも多くていい感じです。ただホットスナックは置いてないので。' },
+    { id:'tora', name:'虎（李徴）', x:502,y:310,w:100,h:60, color:'ritual', src:'2',
+      desc:'隠し森の中に存在する山月記の虎（李徴）。語り手が「どうしてここにいるんですか何を守っているんですか」と問いかける。オムライスのおにぎりを与えると喜んで食べる。',
+      quote:'あ、虎ですね。こんにちは～どうしてここにいるんですか何を守っているんですか私は何をすればいいですか' },
+  ],
+  paths: [
+    { d:'M205 220 L190 220', color:'#7ac9c0', dash:'3,2', label:'ピアノ裏→森への入口' },
+    { d:'M90 305 L90 340', color:'#7ac9c0', dash:'4,3', label:'隠し森への経路' },
+  ]
+},
+
+// ------- 4F -------
+'4f': {
+  label: '4F — 四階（図書室・015隣接）',
+  viewBox: '0 0 900 340',
+  rooms: [
+    { id:'4f_outer', name:'', x:10,y:10,w:740,h:295, color:'empty', src:'i', isOuter:true, desc:'', quote:'' },
+    // MAIN: 図書室 (large, center/south, with atrium)
+    { id:'toshokan', name:'図書室', x:20,y:110,w:400,h:185, color:'safe', src:'b',
+      desc:'吹き抜け（アトリウム）になっており、下の階まで見下ろせる。床下に水が張られ、星空を反射している。「言語でその美しさを表現することができない」。天窓（天井のスカイライト）から屋上が見える。夜の学校で「扉が奥の部屋に繋がっていた」先にある場所（作品1）。刺蛾結社通信では015から逃げた先として登場し、リアルゴールドが笑っていた場所（作品2）。星空の美しさが言語化を拒む、この世界観の最終的な美の拠点。',
+      quote:'そこは星空。吹き抜けになっていて、下は水が張られて、星空をキラキラと反射している。言語でその美しさを表現することがない。でき……そこでリアルゴールドは笑っていて。' },
+    { id:'atrium_water', name:'〈吹き抜け下層・水面〉', x:120,y:145,w:220,h:110, color:'safe', src:'b',
+      desc:'図書室アトリウムの底部に張られた水。星空を反射している。視覚的には3F〜4Fの高さに及ぶ空間の底に位置する。「下は水が張られて、星空をキラキラと反射している」',
+      quote:'下は水が張られて、星空をキラキラと反射している。' },
+    { id:'tenso', name:'〈天窓→屋上〉', x:220,y:110,w:80,h:40, color:'danger', src:'2',
+      desc:'図書室天井の天窓（スカイライト）。ここから上を見ると屋上の様子が見える。「天窓から彼らが走り回ってる姿が見えて」——過去の記憶として屋上に侵入した生徒たちがここから見えた。屋上と図書室を垂直に繋ぐ光の通路。',
+      quote:'小学生のころ、一年上の連中が屋上に勝手に侵入して、大騒ぎになった。天窓から彼らが走り回ってる姿が見えて。' },
+    { id:'tosho_shelves', name:'書架エリア（周囲）', x:20,y:110,w:100,h:185, color:'safe', src:'i',
+      desc:'補完。吹き抜けの周囲を囲む書架スペース。棚には本が並んでいるが、1Fではこの部屋の入口は施錠されていた（作品1では入れなかった）。上の階（4F）から入ることで初めて到達できる逆説的な構造。', quote:'' },
+    // ROOM 015
+    { id:'room015_4f', name:'015号室\n（隣接・暗室）', x:422,y:110,w:160,h:110, color:'danger', src:'1',
+      desc:'暗い部屋015。電気がついていない。大量の中学一年生の声が押し寄せ、語り手が逃げ場を失った場所。この部屋の奥扉を開けると図書室に入れる。B1Fの015と同一号室かもしれないが、建物の構造上4Fに隣接していると推察（建物を縦断する番号体系）。',
+      quote:'もう逃げ場がない。追いつめられている。電気がついてなくて真っ暗なのに、向こうから来る。あ、なんだ。奥の扉で向こうの部屋に逃げれるじゃん。若干重い扉を。' },
+    { id:'art4f', name:'芸術系教室（補完）', x:422,y:222,w:160,h:73, color:'normal', src:'i',
+      desc:'補完。四階の芸術系教室。絵画・版画などの作品が残されていると推察。', quote:'' },
+    { id:'4f_right', name:'特別閲覧室・会議室（補完）', x:584,y:110,w:163,h:185, color:'normal', src:'i',
+      desc:'補完。図書室に隣接する閲覧室・会議室。', quote:'' },
+    { id:'stairs_4f', name:'階段', x:750,y:10,w:60,h:295, color:'normal', src:'i', desc:'補完。', quote:'' },
+    // NORTH SIDE
+    { id:'4f_north1', name:'視聴覚教室（補完）', x:20,y:12,w:230,h:96, color:'normal', src:'i',
+      desc:'補完。映像・音響設備を持つ視聴覚教室。', quote:'' },
+    { id:'4f_north2', name:'図書準備室（補完）', x:252,y:12,w:230,h:96, color:'normal', src:'i',
+      desc:'補完。図書室に隣接する準備室。書架や蔵書の管理スペース。', quote:'' },
+    { id:'4f_north3', name:'多目的ホール（補完）', x:484,y:12,w:263,h:96, color:'normal', src:'i',
+      desc:'補完。四階の多目的ホール。', quote:'' },
+    // floor label
+  ],
+  paths: [
+    { d:'M590 150 L585 150', color:'#c9b46a', dash:'4,2', label:'015→図書室への扉' },
+  ]
+},
+
+// ------- ROOF -------
+roof: {
+  label: '屋上 — 最も死に近い場所',
+  viewBox: '0 0 900 340',
+  rooms: [
+    { id:'roof_outer', name:'', x:10,y:10,w:740,h:295, color:'empty', src:'i', isOuter:true, desc:'', quote:'' },
+    { id:'roof_fence', name:'立入禁止フェンス（全周）', x:10,y:10,w:740,h:20, color:'danger', src:'2',
+      desc:'屋上全周を囲むフェンス。立入禁止。「学校の屋上に入っちゃいけないかというと、最も死に近づいているから」',
+      quote:'なんで学校の屋上に入っちゃいけないかというと、最も死に近づいているから。ただ…星が見たいもの。' },
+    { id:'roof_fence2', name:'フェンス', x:10,y:280,w:740,h:20, color:'danger', src:'2', desc:'補完。南側フェンス。', quote:'' },
+    { id:'roof_main', name:'屋上スペース（立入禁止）', x:30,y:32,w:690,h:246, color:'danger', src:'2',
+      desc:'学校屋上。「終点は屋上だった」という記述が示すように、この旅の物理的な終点。「最も死に近づいているから」立ち入れない。しかし「星が見たいもの」という欲望が語り手を惹きつける。フィボナッチ数列の最後の桁数を見るまで死ねない、という言葉とも呼応する。',
+      quote:'終点は屋上だった。なんで学校の屋上に入っちゃいけないかというと、最も死に近づいているから。ただ…星が見たいもの。フィボナッチ数列の最後の桁数を見るまで死ねない。' },
+    { id:'skylight', name:'天窓（図書室直上）', x:250,y:100,w:180,h:120, color:'safe', src:'2',
+      desc:'屋上から見ると、ここに図書室のアトリウムへ続く天窓がある。「天窓から彼らが走り回ってる姿が見えて」——図書室の下から見上げると屋上が見え、逆に屋上からも図書室の水面が見える垂直的な繋がり。光の通路。',
+      quote:'天窓から彼らが走り回ってる姿が見えて、食べ入っちゃいけない屋上はワクワクする。' },
+    { id:'water_tank', name:'給水タンク', x:580,y:50,w:100,h:80, color:'empty', src:'i',
+      desc:'補完。屋上の給水タンク。図書室の水面の水源かもしれない。', quote:'' },
+    { id:'drain', name:'排水設備', x:30,y:32,w:80,h:50, color:'empty', src:'i',
+      desc:'補完。屋上の排水設備。雨水が下へ流れる。カバが水の音に引き寄せられる仕組みと繋がるかもしれない。', quote:'' },
+    { id:'antenna', name:'アンテナ塔', x:660,y:32,w:58,h:246, color:'empty', src:'i',
+      desc:'補完。校舎のアンテナ塔。電気設備が機能していない夜の学校では無意味な構造物。星へと向かうが届かない塔。', quote:'' },
+    { id:'roof_inscription', name:'终点  /  DEAD END', x:230,y:190,w:220,h:60, color:'danger', src:'2',
+      desc:'この場所が示す意味の刻印。「終点は屋上だった」。片道切符の終着点。しかし語り手はここには至らず、リアルゴールドの手を取って戻った。',
+      quote:'終点は屋上だ。' },
+  ],
+  paths: []
+},
+
+// ------- 二号館 -------
+b2: {
+  label: '二号館',
+  viewBox: '0 0 900 340',
+  rooms: [
+    { id:'b2_outer', name:'', x:10,y:10,w:450,h:295, color:'empty', src:'i', isOuter:true, desc:'', quote:'' },
+    // 1F
+    { id:'b2_corridor1', name:'廊下（1F）', x:20,y:170,w:430,h:30, color:'super', src:'2',
+      desc:'補完。一号館と繋がる廊下。幽霊の目撃例があると推察。',quote:'' },
+    { id:'taiku_soko', name:'体育倉庫', x:20,y:202,w:200,h:95, color:'key', src:'2',
+      desc:'後夜祭が終わった後、物音がする場所として言及。「体育倉庫から物音がしている」。飛龍祭405日目の夜、何かが片付けられている音、あるいは何者かがいる気配。',
+      quote:'体育倉庫から物音がしている。' },
+    { id:'gugunshitsu', name:'器具室', x:222,y:202,w:130,h:95, color:'empty', src:'i',
+      desc:'補完。体育器具が収納されている部屋。バスケットボールや跳び箱などが置かれている。', quote:'' },
+    { id:'koi_shitsu', name:'更衣室（補完）', x:354,y:202,w:96,h:95, color:'empty', src:'i',
+      desc:'補完。体育の授業で使う更衣室。', quote:'' },
+    { id:'b2_watari', name:'渡り廊下接続', x:462,y:155,w:60,h:80, color:'normal', src:'i',
+      desc:'補完。本館との接続部。', quote:'' },
+    // 1F north
+    { id:'b2_1f_n1', name:'準備室（補完）', x:20,y:12,w:200,h:156, color:'empty', src:'i', desc:'補完。一号館1F北側室。', quote:'' },
+    { id:'b2_1f_n2', name:'倉庫（補完）', x:222,y:12,w:130,h:156, color:'empty', src:'i', desc:'補完。', quote:'' },
+    { id:'b2_1f_n3', name:'入口ホール', x:354,y:12,w:96,h:156, color:'normal', src:'i', desc:'補完。二号館の入口ホール。', quote:'' },
+    // 2F
+    { id:'b2_2f_outer', name:'', x:480,y:10,w:400,h:295, color:'empty', src:'i', isOuter:true, desc:'', quote:'' },
+    { id:'b2_corridor2', name:'幽霊出没廊下', x:490,y:170,w:380,h:30, color:'super', src:'2',
+      desc:'「二号館って昼休みでも幽霊出るんですよ」と語られる二号館の廊下。昼でも現れる幽霊の目撃が多い。幽霊の正体や何を守っているかは不明。',
+      quote:'二号館って昼休みでも幽霊出るんですよ。なんで気がついたらわ、虎ですね。ちゃんと除霊しなきゃダメで。' },
+    { id:'seitokai', name:'生徒会室', x:490,y:50,w:160,h:118, color:'key', src:'2',
+      desc:'着火剤を撒いた後、火をつけるものを取りに行こうとした場所。「生徒会室にあるかな？」——ライターや着火具が保管されている。普段は生徒会の活動拠点。理科室の森で虎に着火剤を使おうとする計画に登場。',
+      quote:'火をつけるのを持ってないじゃないですか！取りに帰んなきゃいけないです。生徒会室にあるかな？' },
+    { id:'housou', name:'放送室', x:652,y:50,w:110,h:118, color:'normal', src:'i',
+      desc:'補完。学校放送室。後夜祭の音響設備と関連している可能性。「照明のコンセントを切る」という行為と対応する音響の拠点。', quote:'' },
+    { id:'kaigishitsu', name:'会議室（補完）', x:762,y:50,w:108,h:118, color:'normal', src:'i',
+      desc:'補完。職員会議や生徒会の集まりに使う会議室。', quote:'' },
+    { id:'b2_2f_south', name:'2F廊下・展示（補完）', x:490,y:202,w:380,h:95, color:'empty', src:'i',
+      desc:'補完。二号館2F南側スペース。展示物や掲示板があると推察。', quote:'' },
+  ],
+  paths: []
+},
+
+// ------- 体育館 -------
+gym: {
+  label: '体育館 — 後夜祭会場',
+  viewBox: '0 0 900 400',
+  rooms: [
+    { id:'gym_outer', name:'', x:10,y:10,w:860,h:360, color:'empty', src:'i', isOuter:true, desc:'', quote:'' },
+    { id:'gym_stage', name:'舞台', x:30,y:200,w:800,h:160, color:'ygreen', src:'2',
+      desc:'後夜祭の舞台。5団体がパフォーマンスを行う。①軽音Maxはるかぜ ②ダンス夕暮れ2番線48 ③ダンス四分休符黎明連盟（蛾の彼の団体） ④浮遊するまくらことばズ ⑤What time is it now!?。琴の音色と蛾の羽音が対立し、語り手の選択が決まった場所。',
+      quote:'私は照明を担当していた。2階のスポット係は暑いし、寒い。特等席から見られるから、悪くはないけど。' },
+    { id:'gym_audience', name:'観客席', x:30,y:30,w:800,h:90, color:'normal', src:'2',
+      desc:'後夜祭の観客席。翌朝、語り手は観客席の最前列にいた。「私がいたのは観客席の最前列だった。誰も登っていない舞台を、ただ見ている。」',
+      quote:'翌朝、私にあるすべての違和感が解決した。私がいたのは観客席の最前列だった。誰も登っていない舞台を、ただ見ている。' },
+    { id:'gym_gallery', name:'2階ギャラリー（照明席）', x:30,y:122,w:800,h:76, color:'key', src:'2',
+      desc:'語り手が照明スポットを担当した2階のギャラリー。「2階のスポット係は暑いし、寒い。特等席から見られるから、悪くはないけど。」蛾（彼）のパフォーマンスを上から見下ろす場所。「照明のコンセントを切る。今日が終わる。」',
+      quote:'2階のスポット係は暑いし、寒い。特等席から見られるから、悪くはないけど。照明のコンセントを切る。今日が終わる。' },
+    { id:'gym_spot1', name:'スポットライト①', x:150,y:130,w:50,h:30, color:'key', src:'2', desc:'照明機材。', quote:'' },
+    { id:'gym_spot2', name:'スポットライト②', x:420,y:130,w:50,h:30, color:'key', src:'2', desc:'照明機材。', quote:'' },
+    { id:'gym_spot3', name:'スポットライト③', x:690,y:130,w:50,h:30, color:'key', src:'2', desc:'照明機材。', quote:'' },
+    { id:'gym_exit', name:'搬入口・非常口', x:30,y:370,w:120,h:28, color:'normal', src:'i', desc:'補完。体育館の搬入・非常出口。', quote:'' },
+    { id:'gym_back', name:'バックステージ（補完）', x:750,y:200,w:110,h:160, color:'normal', src:'i',
+      desc:'補完。舞台裏のバックステージ。各出演団体が準備をする場所。', quote:'' },
+  ],
+  paths: [
+    { d:'M430 122 L430 200', color:'#b8c96a', dash:'4,3', label:'照明→舞台への光の軸' },
+    { d:'M200 122 L200 200', color:'#b8c96a', dash:'4,3', label:'' },
+    { d:'M660 122 L660 200', color:'#b8c96a', dash:'4,3', label:'' },
+  ]
+},
+
+};
+
+// =====================================================
+// RENDERING ENGINE
+// =====================================================
+
+let currentFloor = 'campus';
+let selectedRoom = null;
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+
+function renderFloor(floorKey) {
+  currentFloor = floorKey;
+  const floor = floors[floorKey];
+  if (!floor) return;
+
+  const svg = document.getElementById('mapSvg');
+  svg.setAttribute('viewBox', floor.viewBox);
+  document.getElementById('floorLabel').textContent = floor.label;
+
+  // Clear
+  svg.innerHTML = '';
+
+  // Grid background
+  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  defs.innerHTML = `
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1a1a2e" stroke-width="0.5"/>
+    </pattern>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-strong">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  `;
+  svg.appendChild(defs);
+
+  // Background
+  const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  bg.setAttribute('width','100%'); bg.setAttribute('height','100%');
+  bg.setAttribute('fill','url(#grid)');
+  svg.appendChild(bg);
+
+  // Draw paths
+  if (floor.paths) {
+    floor.paths.forEach(p => {
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', p.d);
+      path.setAttribute('stroke', p.color);
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('stroke-dasharray', p.dash || '');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('opacity', '0.5');
+      svg.appendChild(path);
+    });
+  }
+
+  // Draw rooms
+  floor.rooms.forEach(room => {
+    const color = COLORS[room.color] || '#404858';
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','room');
+    g.setAttribute('data-id', room.id);
+
+    // Outer wall (special case)
+    if (room.isOuter) {
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('x', room.x); rect.setAttribute('y', room.y);
+      rect.setAttribute('width', room.w); rect.setAttribute('height', room.h);
+      rect.setAttribute('fill', 'rgba(20,20,32,0.8)');
+      rect.setAttribute('stroke', '#3a3a58');
+      rect.setAttribute('stroke-width', '2');
+      svg.appendChild(rect);
+      return;
+    }
+
+    // Room fill
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x', room.x); rect.setAttribute('y', room.y);
+    rect.setAttribute('width', room.w); rect.setAttribute('height', room.h);
+    rect.setAttribute('fill', `rgba(${hexToRgb(color)},0.12)`);
+    rect.setAttribute('stroke', color);
+    rect.setAttribute('stroke-width', room.src === 'i' ? '0.5' : '1');
+    rect.setAttribute('stroke-dasharray', room.src === 'i' ? '4,2' : '');
+    rect.setAttribute('class', 'room-stroke');
+
+    // Glow for important rooms
+    if (room.src !== 'i' && room.src !== '') {
+      rect.setAttribute('filter', room.color === 'key' || room.color === 'danger' || room.color === 'safe' ? 'url(#glow)' : '');
+    }
+
+    g.appendChild(rect);
+
+    // Room label
+    if (room.name && room.w > 30) {
+      const lines = room.name.split('\n');
+      const cy = room.y + room.h/2;
+      const cx = room.x + room.w/2;
+      const startY = lines.length > 1 ? cy - (lines.length-1)*6 : cy;
+
+      lines.forEach((line, i) => {
+        const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+        text.setAttribute('x', cx);
+        text.setAttribute('y', startY + i*13 + 4);
+        text.setAttribute('text-anchor','middle');
+        text.setAttribute('dominant-baseline','middle');
+        const fs = room.w < 70 ? 8 : room.w < 100 ? 9 : 10;
+        text.setAttribute('font-size', fs);
+        text.setAttribute('fill', room.src === 'i' ? '#4a4a60' : color);
+        text.setAttribute('font-family','Noto Serif JP,serif');
+        text.setAttribute('class','room-label');
+        text.setAttribute('pointer-events','none');
+        text.textContent = line;
+        g.appendChild(text);
+      });
+
+      // Source badge
+      if (room.src && room.src !== 'i' && room.w > 50 && room.h > 30) {
+        const badge = document.createElementNS('http://www.w3.org/2000/svg','text');
+        badge.setAttribute('x', room.x + room.w - 4);
+        badge.setAttribute('y', room.y + 10);
+        badge.setAttribute('text-anchor','end');
+        badge.setAttribute('font-size','7');
+        badge.setAttribute('fill', SRC_LABELS[room.src]?.color || '#6a7a6a');
+        badge.setAttribute('font-family','Noto Serif JP,serif');
+        badge.setAttribute('pointer-events','none');
+        badge.textContent = SRC_LABELS[room.src]?.label || '';
+        g.appendChild(badge);
+      }
+    }
+
+    // Click handler
+    if (room.desc) {
+      g.style.cursor = 'pointer';
+      g.addEventListener('click', () => selectRoom(room));
+    }
+
+    svg.appendChild(g);
+  });
+
+  // North arrow
+  const compass = document.createElementNS('http://www.w3.org/2000/svg','g');
+  compass.setAttribute('transform','translate(860,20)');
+  compass.setAttribute('opacity','0.3');
+  const arrowPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+  arrowPath.setAttribute('d','M0,18 L-5,0 L0,6 L5,0 Z');
+  arrowPath.setAttribute('fill','#8aaecc');
+  const nLabel = document.createElementNS('http://www.w3.org/2000/svg','text');
+  nLabel.setAttribute('x','0'); nLabel.setAttribute('y','28');
+  nLabel.setAttribute('text-anchor','middle'); nLabel.setAttribute('font-size','9');
+  nLabel.setAttribute('fill','#8aaecc'); nLabel.setAttribute('font-family','Noto Serif JP,serif');
+  nLabel.textContent = 'N';
+  compass.appendChild(arrowPath); compass.appendChild(nLabel);
+  svg.appendChild(compass);
+}
+
+function selectRoom(room) {
+  selectedRoom = room;
+  const color = COLORS[room.color] || '#404858';
+  const srcInfo = SRC_LABELS[room.src] || { label:'不明', color:'#6a7a6a' };
+
+  const sideContent = document.getElementById('sideContent');
+  let html = `
+    <div class="side-room-name" style="color:${color}">${room.name.replace(/\n/g,'　')}</div>
+    <div class="side-room-tag" style="color:${srcInfo.color};border-color:${srcInfo.color}">${srcInfo.label}</div>
+    <div class="side-room-desc">${room.desc || ''}</div>
+  `;
+  if (room.quote) {
+    html += `<div class="side-quote">「${room.quote}」</div>`;
+  }
+  sideContent.innerHTML = html;
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    renderFloor(tab.dataset.floor);
+    document.getElementById('sideContent').innerHTML = '<div class="side-empty">部屋をクリックすると詳細が表示されます</div>';
+  });
+});
+
+// Initial render
+renderFloor('campus');
+</script>
+
+</body>
+</html>
+	◦	
