@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Scholarium</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05071a;
+  --accent:#e8a85f;
+  --accent2:#f0c080;
+  --text:#c2d0f0;
+  --dim:#4a5a88;
+  --serif:'Noto Serif JP',serif;
+  --sans:'Noto Sans JP',sans-serif;
+  /* floor plan colors */
+  --wall:#1e2d60;
+  --wall-hi:rgba(100,140,230,0.45);
+  --room:#090d24;
+  --room-occ:#0d1130;
+  --corridor:#0f1530;
+  --corr-light:rgba(100,140,255,0.06);
+  --window-amber:rgba(255,195,80,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:var(--sans);color:var(--text)}
+
+body::before{
+content:’’;position:fixed;inset:0;
+background:
+radial-gradient(ellipse at 20% 95%,rgba(255,130,30,0.04) 0%,transparent 45%),
+radial-gradient(ellipse at 80% 5%,rgba(50,70,200,0.06) 0%,transparent 45%);
+pointer-events:none;z-index:0
+}
+.stars-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.4}
+
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column}
+
+/* ── Header ── */
+header{
+padding:16px 18px 10px;
+border-bottom:1px solid rgba(80,110,200,0.15);
+background:rgba(5,7,26,0.95);
+backdrop-filter:blur(14px);
+flex-shrink:0;
+display:flex;align-items:center;justify-content:space-between
+}
+.h-title{font-family:var(–serif);font-size:19px;font-weight:300;letter-spacing:.12em}
+.h-sub{font-size:9px;color:var(–dim);letter-spacing:.22em;text-transform:uppercase;margin-top:1px}
+.h-count{font-family:var(–serif);font-size:11px;color:var(–dim)}
+.h-count span{color:var(–accent);font-size:19px;font-weight:300;vertical-align:middle;margin-right:1px}
+
+/* ── Floor Tabs ── */
+.floor-tabs{
+display:flex;gap:5px;padding:9px 14px;
+overflow-x:auto;scrollbar-width:none;
+background:rgba(6,9,28,0.8);
+border-bottom:1px solid rgba(70,100,180,0.14);
+flex-shrink:0
+}
+.floor-tabs::-webkit-scrollbar{display:none}
+.floor-tab{
+flex-shrink:0;padding:5px 14px;
+border:1px solid rgba(70,100,180,0.2);
+border-radius:20px;background:transparent;
+color:var(–dim);font-family:var(–serif);font-size:12px;
+cursor:pointer;transition:all .22s
+}
+.floor-tab.active{border-color:var(–accent);color:var(–accent);background:rgba(232,168,95,0.07);box-shadow:0 0 12px rgba(232,168,95,0.2)}
+.floor-tab .tdot{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(–accent);margin-left:4px;vertical-align:middle;opacity:0;transition:opacity .2s}
+.floor-tab.has-chars .tdot{opacity:1}
+
+/* ── Map Area ── */
+.map-area{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(80,110,200,0.2) transparent;position:relative;padding:14px 12px 90px}
+.map-area::-webkit-scrollbar{width:3px}
+.map-area::-webkit-scrollbar-thumb{background:rgba(80,110,200,0.2);border-radius:2px}
+
+/* ── Floor Plan Wrapper ── */
+.plan-wrap{
+position:relative;
+/* height set by JS */
+}
+.plan-inner{
+position:relative;
+transform-origin:top left;
+/* width, height, transform set by JS */
+}
+
+/* Plan Background */
+.plan-bg{
+position:absolute;inset:0;
+background:#080c22;
+border:2px solid rgba(80,120,220,0.35);
+border-radius:3px;
+overflow:hidden
+}
+.plan-bg::after{
+content:’’;position:absolute;inset:0;
+background:
+radial-gradient(ellipse at 50% 50%,rgba(60,90,200,0.04) 0%,transparent 70%);
+}
+
+/* Corridor */
+.plan-corr{
+position:absolute;
+background:var(–corridor);
+}
+.plan-corr::after{
+content:’’;position:absolute;inset:0;
+background:linear-gradient(90deg,transparent,var(–corr-light) 30%,var(–corr-light) 70%,transparent);
+}
+
+/* Corridor light strip */
+.plan-corr-light{
+position:absolute;
+height:1px;
+background:linear-gradient(90deg,transparent,rgba(140,180,255,0.12),rgba(140,180,255,0.12),transparent);
+pointer-events:none
+}
+
+/* Room */
+.plan-room{
+position:absolute;
+background:var(–room);
+border:1px solid rgba(60,90,180,0.28);
+display:flex;flex-direction:column;
+align-items:center;justify-content:center;
+text-align:center;
+cursor:pointer;
+overflow:hidden;
+user-select:none;
+transition:background .18s
+}
+.plan-room.occ{border-color:rgba(232,168,95,0.32)}
+.plan-room:active{background:rgba(232,168,95,0.1) !important}
+
+/* Room inner glow (top rooms get gradient from top, bottom from bottom) */
+.plan-room.top-room::after{
+content:’’;position:absolute;inset:0;
+background:linear-gradient(to bottom,rgba(80,110,220,0.04) 0%,transparent 50%);
+pointer-events:none
+}
+.plan-room.bot-room::after{
+content:’’;position:absolute;inset:0;
+background:linear-gradient(to top,rgba(80,110,220,0.04) 0%,transparent 50%);
+pointer-events:none
+}
+
+.plan-room-name{
+font-family:var(–sans);
+font-size:9px;
+color:rgba(180,200,250,0.8);
+line-height:1.6;
+padding:2px 3px;
+position:relative;z-index:1;
+pointer-events:none;
+word-break:keep-all
+}
+.plan-room.wide .plan-room-name{font-size:10.5px;font-family:var(–serif)}
+.plan-room.tall .plan-room-name{font-size:10px}
+
+.plan-room-badge{
+position:absolute;bottom:3px;right:4px;
+font-size:7px;color:rgba(232,168,95,0.65);
+pointer-events:none;z-index:2
+}
+.plan-room-dot{
+position:absolute;top:4px;left:4px;
+width:4px;height:4px;border-radius:50%;
+background:var(–accent);opacity:0;
+pointer-events:none;z-index:2;
+transition:opacity .3s
+}
+.plan-room.occ .plan-room-dot{opacity:0.7}
+
+/* Door gap visual */
+.plan-door{
+position:absolute;
+background:var(–corridor);
+pointer-events:none;
+z-index:3
+}
+
+/* Staircase */
+.plan-stairs{
+position:absolute;
+background:repeating-linear-gradient(
+-45deg,
+transparent,transparent 2.5px,
+rgba(80,110,200,0.09) 2.5px,
+rgba(80,110,200,0.09) 3px
+);
+border-left:1px solid rgba(80,110,200,0.25);
+display:flex;align-items:center;justify-content:center;
+flex-direction:column;gap:3px
+}
+.plan-stairs-text{
+writing-mode:vertical-rl;
+font-size:5.5px;letter-spacing:.2em;
+color:rgba(90,120,200,0.45);
+text-transform:uppercase
+}
+
+/* Window strips */
+.plan-window{
+position:absolute;
+pointer-events:none
+}
+
+/* Corridor label */
+.plan-corr-label{
+position:absolute;
+font-size:6.5px;letter-spacing:.15em;
+color:rgba(80,110,180,0.45);
+text-transform:uppercase;
+pointer-events:none;z-index:2
+}
+
+/* Character dot */
+.plan-cdot{
+position:absolute;left:0;top:0;
+width:7px;height:7px;border-radius:50%;
+pointer-events:none;z-index:20;
+transform:translate(0,0);
+will-change:transform
+}
+.plan-cdot::after{
+content:’’;position:absolute;inset:-3px;
+border-radius:50%;opacity:.25;
+animation:cpulse 2s ease-in-out infinite
+}
+@keyframes cpulse{
+0%,100%{transform:scale(1);opacity:.2}
+50%{transform:scale(2.4);opacity:.5}
+}
+
+/* floor label */
+.floor-label{
+font-family:var(–serif);font-size:9px;
+letter-spacing:.2em;color:var(–dim);
+text-transform:uppercase;
+margin-top:8px;text-align:center;
+opacity:.7
+}
+
+/* ── FAB ── */
+.fab{
+position:fixed;bottom:28px;
+right:max(18px,calc(50vw - 222px));
+width:50px;height:50px;border-radius:50%;
+background:linear-gradient(135deg,#e8a85f,#c87a3a);
+border:none;cursor:pointer;
+display:flex;align-items:center;justify-content:center;
+color:#180c02;
+box-shadow:0 4px 22px rgba(232,168,95,0.42),0 0 50px rgba(232,168,95,0.09);
+z-index:200;transition:transform .2s,box-shadow .2s;
+font-size:25px;font-weight:200;padding-bottom:2px
+}
+.fab:active{transform:scale(0.9)}
+
+/* ── Overlay + Panels ── */
+.overlay{
+position:fixed;inset:0;background:rgba(5,7,26,0.62);
+backdrop-filter:blur(3px);z-index:300;
+opacity:0;pointer-events:none;transition:opacity .28s
+}
+.overlay.show{opacity:1;pointer-events:all}
+
+.panel{
+position:fixed;bottom:0;left:50%;
+transform:translateX(-50%) translateY(102%);
+width:100%;max-width:480px;
+background:linear-gradient(to bottom,#0e1336,#0b1030);
+border-top:1px solid rgba(100,140,220,0.22);
+border-radius:20px 20px 0 0;z-index:400;
+transition:transform .36s cubic-bezier(.22,1,.36,1);
+max-height:80vh;overflow:hidden;display:flex;flex-direction:column
+}
+.panel.show{transform:translateX(-50%) translateY(0)}
+
+.panel-handle{width:34px;height:3px;background:rgba(100,140,220,0.22);border-radius:2px;margin:10px auto 0;flex-shrink:0}
+.panel-header{padding:13px 20px 11px;border-bottom:1px solid rgba(70,100,180,0.14);flex-shrink:0;display:flex;align-items:flex-end;justify-content:space-between}
+.panel-title{font-family:var(–serif);font-size:18px;font-weight:300}
+.panel-meta{font-size:11px;color:var(–dim)}
+.panel-body{overflow-y:auto;flex:1;padding:8px 14px 30px;scrollbar-width:thin;scrollbar-color:rgba(70,100,180,0.15) transparent}
+
+.char-item{
+display:flex;align-items:center;gap:11px;
+padding:10px 10px;border-radius:10px;
+cursor:pointer;transition:background .2s;
+border:1px solid transparent;margin-bottom:3px
+}
+.char-item:active{background:rgba(232,168,95,0.06);border-color:rgba(232,168,95,0.14)}
+.char-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(–serif);font-size:15px;flex-shrink:0}
+.char-info{flex:1;min-width:0}
+.char-name{font-family:var(–serif);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.char-sub{font-size:11px;color:var(–dim);margin-top:1px}
+.char-arr{color:var(–dim);font-size:18px;opacity:.5}
+
+.detail-wrap{padding-bottom:20px}
+.btn-back{background:none;border:none;color:var(–dim);font-family:var(–sans);font-size:13px;padding:4px 2px 10px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.detail-hero{text-align:center;padding:18px 10px 16px;border-bottom:1px solid rgba(70,100,180,0.14);margin-bottom:4px}
+.detail-av{width:64px;height:64px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-family:var(–serif);font-size:24px}
+.detail-name{font-family:var(–serif);font-size:21px;font-weight:300;margin-bottom:3px}
+.detail-loc{font-size:11px;color:var(–dim);letter-spacing:.1em}
+.detail-row{padding:12px 4px;border-bottom:1px solid rgba(80,110,200,0.07)}
+.detail-row:last-of-type{border-bottom:none}
+.detail-lbl{font-size:9px;letter-spacing:.2em;color:var(–dim);text-transform:uppercase;margin-bottom:4px}
+.detail-val{font-size:15px;line-height:1.7;white-space:pre-wrap}
+.btn-del{display:block;margin:16px auto 0;padding:7px 20px;background:none;border:1px solid rgba(220,80,80,0.22);border-radius:8px;color:rgba(220,80,80,0.55);font-family:var(–sans);font-size:12px;cursor:pointer;transition:all .2s}
+.btn-del:active{background:rgba(220,80,80,0.07)}
+
+.empty-st{text-align:center;padding:32px 20px}
+.empty-ic{font-size:26px;opacity:.2;margin-bottom:8px}
+.empty-tx{font-family:var(–serif);font-size:13px;color:var(–dim);line-height:2}
+
+/* ── Modal ── */
+.modal-ov{position:fixed;inset:0;background:rgba(5,7,26,0.68);backdrop-filter:blur(4px);z-index:490;opacity:0;pointer-events:none;transition:opacity .28s}
+.modal-ov.show{opacity:1;pointer-events:all}
+.modal{
+position:fixed;bottom:0;left:50%;
+transform:translateX(-50%) translateY(102%);
+width:100%;max-width:480px;
+background:linear-gradient(to bottom,#0e1336,#0b1030);
+border-top:1px solid rgba(100,140,220,0.28);
+border-radius:20px 20px 0 0;z-index:500;
+transition:transform .36s cubic-bezier(.22,1,.36,1);
+max-height:90vh;overflow-y:auto;
+padding:10px 18px 50px;
+scrollbar-width:thin;scrollbar-color:rgba(70,100,180,0.15) transparent
+}
+.modal.show{transform:translateX(-50%) translateY(0)}
+.modal-handle{width:34px;height:3px;background:rgba(100,140,220,0.22);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-family:var(–serif);font-size:18px;font-weight:300;text-align:center;margin-bottom:18px;letter-spacing:.06em}
+
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:9px;letter-spacing:.2em;color:var(–dim);text-transform:uppercase;margin-bottom:6px}
+.fi,.fs,.ft{
+width:100%;background:rgba(255,255,255,0.03);
+border:1px solid rgba(70,100,180,0.22);
+border-radius:10px;padding:10px 12px;
+color:var(–text);font-family:var(–sans);font-size:15px;
+outline:none;transition:border-color .2s,box-shadow .2s;
+-webkit-appearance:none;appearance:none
+}
+.fi::placeholder,.ft::placeholder{color:var(–dim);opacity:.7}
+.fi:focus,.fs:focus,.ft:focus{border-color:rgba(232,168,95,0.42);box-shadow:0 0 0 3px rgba(232,168,95,0.06)}
+.fs{
+background-image:url(“data:image/svg+xml,%3Csvg xmlns=‘http://www.w3.org/2000/svg’ width=‘14’ height=‘14’ viewBox=‘0 0 24 24’ fill=‘none’ stroke=’%234a5a88’ stroke-width=‘2’%3E%3Cpolyline points=‘6 9 12 15 18 9’/%3E%3C/svg%3E”);
+background-repeat:no-repeat;background-position:right 11px center;padding-right:34px;cursor:pointer
+}
+.fs option{background:#0e1336;color:var(–text)}
+.ft{resize:none;height:76px;line-height:1.6}
+
+.swatches{display:flex;gap:7px;flex-wrap:wrap}
+.swatch{
+width:26px;height:26px;border-radius:50%;cursor:pointer;
+border:2px solid transparent;transition:transform .15s,border-color .15s;position:relative
+}
+.swatch.sel{border-color:rgba(255,255,255,0.7);transform:scale(1.18)}
+.swatch.sel::after{content:‘✓’;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.9)}
+.swatch:active{transform:scale(0.9) !important}
+
+.btn-sub{
+width:100%;margin-top:6px;padding:13px;
+background:linear-gradient(135deg,rgba(232,168,95,.92),rgba(200,122,50,.92));
+border:none;border-radius:12px;
+color:#180c02;font-family:var(–serif);font-size:15px;font-weight:600;
+letter-spacing:.05em;cursor:pointer;transition:opacity .2s,transform .15s
+}
+.btn-sub:active{opacity:.85;transform:scale(.99)}
+
+@keyframes fadeSlide{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.floor-anim{animation:fadeSlide .26s ease}
+</style>
+
+</head>
+<body>
+
+<canvas class="stars-canvas" id="starsCanvas"></canvas>
+
+<div class="app">
+  <header>
+    <div>
+      <div class="h-title">Scholarium</div>
+      <div class="h-sub">創作キャラクターマップ</div>
+    </div>
+    <div class="h-count" id="hCount"><span>0</span>人</div>
+  </header>
+  <div class="floor-tabs" id="floorTabs"></div>
+  <div class="map-area" id="mapArea"></div>
+</div>
+
+<button class="fab" id="fabBtn">＋</button>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="panel" id="roomPanel">
+  <div class="panel-handle"></div>
+  <div class="panel-header">
+    <div>
+      <div class="panel-title" id="rPTitle"></div>
+      <div class="panel-meta" id="rPMeta"></div>
+    </div>
+  </div>
+  <div class="panel-body" id="rPBody"></div>
+</div>
+
+<div class="panel" id="charPanel">
+  <div class="panel-handle"></div>
+  <div class="panel-body" id="cPBody"></div>
+</div>
+
+<div class="modal-ov" id="modalOv"></div>
+<div class="modal" id="addModal">
+  <div class="modal-handle"></div>
+  <div class="modal-title">キャラクターを追加</div>
+  <div class="fg"><label class="fl">名前</label><input class="fi" id="iName" type="text" placeholder="名前を入力..." autocomplete="off"></div>
+  <div class="fg"><label class="fl">フロア</label><select class="fs" id="iFloor"></select></div>
+  <div class="fg"><label class="fl">クラス / 部屋</label><select class="fs" id="iRoom"></select></div>
+  <div class="fg"><label class="fl">その他情報</label><textarea class="ft" id="iInfo" placeholder="性格、特徴、関係性など..."></textarea></div>
+  <div class="fg"><label class="fl">カラー</label><div class="swatches" id="swatches"></div></div>
+  <button class="btn-sub" id="subBtn">追加する</button>
+</div>
+
+<script>
+/* ============================
+   FLOOR PLAN DATA
+============================ */
+// Design space: PW x PH
+const PW = 320, PH = 198;
+// Corridor band: y=82, h=22, center y=93
+const CY = 82, CH = 22, CCY = 93;
+// Staircase: x=296, w=24
+const SX = 296, SW = 24;
+// Usable room width = 294 (x=2 to x=296)
+
+const FLOOR_PLANS = {
+  'b1': {
+    label:'B1', name:'地下1階',
+    rooms:[
+      // TOP ROW (y=2, h=78)
+      {id:'gym',       name:'体育館',      x:2,  y:2,  w:153, h:78, large:true},
+      {id:'locker_m',  name:'更衣室（男）', x:157,y:2,  w:68,  h:37},
+      {id:'locker_f',  name:'更衣室（女）', x:157,y:41, w:68,  h:39},
+      {id:'equipment', name:'器具室',       x:227,y:2,  w:67,  h:78},
+      // BOTTOM ROW (y=106, h=90)
+      {id:'machine',   name:'機械室',       x:2,  y:106,w:145, h:90},
+      {id:'pool',      name:'プール倉庫',   x:149,y:106,w:145, h:90},
+    ],
+    windows:{
+      top:[{x:20,y:0},{x:60,y:0},{x:100,y:0},{x:240,y:0},{x:270,y:0}],
+      bot:[{x:30,y:198},{x:100,y:198},{x:200,y:198},{x:260,y:198}]
+    }
+  },
+  '1f': {
+    label:'1F', name:'1階',
+    rooms:[
+      // TOP ROW
+      {id:'1a',      name:'1年A組', x:2,  y:2,  w:70,  h:78},
+      {id:'1b',      name:'1年B組', x:74, y:2,  w:70,  h:78},
+      {id:'1c',      name:'1年C組', x:146,y:2,  w:70,  h:78},
+      {id:'library', name:'図書室', x:218,y:2,  w:76,  h:78, large:true},
+      // BOTTOM ROW
+      {id:'entrance',name:'昇降口', x:2,  y:106,w:74,  h:90, large:true},
+      {id:'staff',   name:'職員室', x:78, y:106,w:82,  h:90},
+      {id:'health',  name:'保健室', x:162,y:106,w:66,  h:90},
+      {id:'music',   name:'音楽室', x:230,y:106,w:64,  h:90},
+    ],
+    windows:{
+      top:[{x:20,y:0},{x:100,y:0},{x:170,y:0},{x:245,y:0},{x:280,y:0}],
+      bot:[{x:30,y:198},{x:110,y:198},{x:190,y:198},{x:255,y:198}]
+    }
+  },
+  '2f': {
+    label:'2F', name:'2階',
+    rooms:[
+      {id:'2a',          name:'2年A組',    x:2,  y:2,  w:96,  h:78},
+      {id:'2b',          name:'2年B組',    x:100,y:2,  w:96,  h:78},
+      {id:'2c',          name:'2年C組',    x:198,y:2,  w:96,  h:78},
+      {id:'science1',    name:'理科室1',   x:2,  y:106,w:96,  h:90},
+      {id:'science2',    name:'理科室2',   x:100,y:106,w:96,  h:90},
+      {id:'science_prep',name:'理科準備室', x:198,y:106,w:96,  h:90},
+    ],
+    windows:{
+      top:[{x:30,y:0},{x:140,y:0},{x:230,y:0},{x:270,y:0}],
+      bot:[{x:30,y:198},{x:140,y:198},{x:230,y:198},{x:270,y:198}]
+    }
+  },
+  '3f': {
+    label:'3F', name:'3階',
+    rooms:[
+      {id:'3a',     name:'3年A組',  x:2,  y:2,  w:96,  h:78},
+      {id:'3b',     name:'3年B組',  x:100,y:2,  w:96,  h:78},
+      {id:'3c',     name:'3年C組',  x:198,y:2,  w:96,  h:78},
+      {id:'art',    name:'美術室',  x:2,  y:106,w:96,  h:90},
+      {id:'home_ec',name:'家庭科室', x:100,y:106,w:96,  h:90},
+      {id:'sewing', name:'被服室',  x:198,y:106,w:96,  h:90},
+    ],
+    windows:{
+      top:[{x:30,y:0},{x:140,y:0},{x:240,y:0}],
+      bot:[{x:40,y:198},{x:150,y:198},{x:250,y:198}]
+    }
+  },
+  '4f': {
+    label:'4F', name:'4階',
+    rooms:[
+      {id:'hall',           name:'多目的\nホール',  x:2,  y:2,  w:146, h:78, large:true},
+      {id:'av',             name:'視聴覚室',        x:150,y:2,  w:72,  h:78},
+      {id:'broadcast',      name:'放送室',          x:224,y:2,  w:70,  h:78},
+      {id:'pc',             name:'コンピュータ室',  x:2,  y:106,w:108, h:90},
+      {id:'student_council',name:'生徒会室',        x:112,y:106,w:80,  h:90},
+      {id:'counseling',     name:'相談室',          x:194,y:106,w:100, h:90},
+    ],
+    windows:{
+      top:[{x:50,y:0},{x:110,y:0},{x:200,y:0},{x:260,y:0}],
+      bot:[{x:40,y:198},{x:150,y:198},{x:245,y:198}]
+    }
+  },
+  '5f': {
+    label:'5F', name:'5階',
+    rooms:[
+      {id:'observatory',name:'天体\n観測室',  x:2,  y:2,  w:144, h:78, large:true},
+      {id:'special',    name:'特別活動室',   x:148,y:2,  w:146, h:78},
+      {id:'prep',       name:'屋上\n準備室',  x:2,  y:106,w:96,  h:90},
+      {id:'rooftop',    name:'屋上テラス',   x:100,y:106,w:194, h:90, large:true, outdoor:true},
+    ],
+    windows:{
+      top:[{x:40,y:0},{x:100,y:0},{x:200,y:0},{x:260,y:0}],
+      bot:[{x:40,y:198},{x:175,y:198},{x:250,y:198}]
+    }
+  }
+};
+
+const FLOOR_ORDER = ['b1','1f','2f','3f','4f','5f'];
+
+const COLORS = [
+  '#e8a85f','#7ab8d8','#c47ec4','#72c47a',
+  '#e87878','#a0d485','#78a8e8','#d4c850',
+  '#b878e8','#e89ab8','#5cc4b8','#e8786a'
+];
+
+/* ============================
+   STATE
+============================ */
+let ST = { chars:[], floor:'1f' };
+let selColor = COLORS[0];
+
+function loadData() {
+  try {
+    const s = localStorage.getItem('scholarium_v3');
+    if(s){ const p=JSON.parse(s); ST.chars=p.chars||[]; }
+  } catch(e){}
+}
+function saveData() {
+  try { localStorage.setItem('scholarium_v3', JSON.stringify({chars:ST.chars})); } catch(e){}
+}
+
+/* ============================
+   STARS
+============================ */
+function initStars() {
+  const c = document.getElementById('starsCanvas');
+  const ctx = c.getContext('2d');
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  const stars = Array.from({length:70},()=>({
+    x:Math.random()*c.width, y:Math.random()*c.height*.45,
+    r:Math.random()*1.1+.2, a:Math.random(),
+    s:Math.random()*.005+.002, d:Math.random()>.5?1:-1
+  }));
+  function draw() {
+    ctx.clearRect(0,0,c.width,c.height);
+    stars.forEach(s=>{
+      s.a+=s.s*s.d; if(s.a>1||s.a<.1) s.d*=-1;
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(180,200,255,${s.a*.55})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ============================
+   FLOOR PLAN RENDER
+============================ */
+let planScale = 1;
+
+function calcScale() {
+  const mapEl = document.getElementById('mapArea');
+  const available = mapEl.clientWidth - 24; // 12px padding each side
+  planScale = available / PW;
+  return planScale;
+}
+
+function buildFloorPlan(floorId) {
+  const fp = FLOOR_PLANS[floorId];
+  const chars = ST.chars.filter(c=>c.floor===floorId);
+  const sc = calcScale();
+  const planH = PH * sc;
+
+  const mapEl = document.getElementById('mapArea');
+  mapEl.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'plan-wrap floor-anim';
+  wrap.style.cssText = `height:${planH}px;margin-bottom:8px`;
+
+  const inner = document.createElement('div');
+  inner.className = 'plan-inner';
+  inner.id = 'planInner';
+  inner.style.cssText = `width:${PW}px;height:${PH}px;transform:scale(${sc})`;
+
+  // Background
+  const bg = el('div','plan-bg'); inner.appendChild(bg);
+
+  // Corridor
+  const corr = el('div','plan-corr');
+  setPos(corr, 2, CY, PW-4, CH);
+  inner.appendChild(corr);
+
+  // Corridor center light line
+  const cl = el('div','plan-corr-light');
+  cl.style.cssText = `position:absolute;left:2px;top:${CCY}px;width:${PW-4}px`;
+  inner.appendChild(cl);
+
+  // Corridor label
+  const clbl = el('div','plan-corr-label');
+  clbl.textContent = '廊 下';
+  clbl.style.cssText = `left:${PW/2-14}px;top:${CY+6}px`;
+  inner.appendChild(clbl);
+
+  // Staircase block
+  const stairs = el('div','plan-stairs');
+  setPos(stairs, SX, 2, SW, PH-4);
+  stairs.innerHTML = `<span class="plan-stairs-text">階段</span><span class="plan-stairs-text">EV</span>`;
+  inner.appendChild(stairs);
+
+  // Windows on exterior walls
+  if(fp.windows) {
+    fp.windows.top.forEach(w=>{
+      const ww = el('div','plan-window');
+      ww.style.cssText = `left:${w.x}px;top:0px;width:18px;height:3px;background:rgba(255,200,80,0.14);border:none;border-bottom:1px solid rgba(255,200,80,0.25)`;
+      inner.appendChild(ww);
+    });
+    fp.windows.bot.forEach(w=>{
+      const ww = el('div','plan-window');
+      ww.style.cssText = `left:${w.x}px;top:${PH-3}px;width:18px;height:3px;background:rgba(255,200,80,0.14);border:none;border-top:1px solid rgba(255,200,80,0.25)`;
+      inner.appendChild(ww);
+    });
+  }
+
+  // Rooms
+  fp.rooms.forEach(room => {
+    const occupied = chars.filter(c=>c.room===room.id);
+    const isTop = room.y < CY;
+
+    const rdiv = el('div','plan-room');
+    if(room.large) rdiv.classList.add('wide');
+    if(room.outdoor) rdiv.classList.add('outdoor-room');
+    if(occupied.length>0) rdiv.classList.add('occ');
+    rdiv.classList.add(isTop?'top-room':'bot-room');
+
+    setPos(rdiv, room.x, room.y, room.w, room.h);
+
+    // Subtle room-specific tint
+    if(room.outdoor) rdiv.style.background='#08100e';
+    else if(room.large) rdiv.style.background='#080b1e';
+
+    // Door gap visual: thin strip matching corridor color
+    const doorW = Math.min(16, room.w * 0.4);
+    const doorX = room.x + room.w/2 - doorW/2;
+    const door = el('div','plan-door');
+    if(isTop) {
+      door.style.cssText = `left:${doorX-room.x}px;bottom:-1px;width:${doorW}px;height:2px`;
+    } else {
+      door.style.cssText = `left:${doorX-room.x}px;top:-1px;width:${doorW}px;height:2px`;
+    }
+    rdiv.appendChild(door);
+
+    // Room name
+    const nspan = el('div','plan-room-name');
+    nspan.innerHTML = room.name.replace(/\n/g,'<br>');
+    rdiv.appendChild(nspan);
+
+    // Occupied dot
+    const dot = el('div','plan-room-dot'); rdiv.appendChild(dot);
+
+    // Char count badge
+    if(occupied.length>0){
+      const badge = el('div','plan-room-badge');
+      badge.textContent = `×${occupied.length}`;
+      rdiv.appendChild(badge);
+    }
+
+    rdiv.addEventListener('click', ()=>openRoom(floorId, room.id));
+    inner.appendChild(rdiv);
+  });
+
+  wrap.appendChild(inner);
+  mapEl.appendChild(wrap);
+
+  // Floor label
+  const flbl = el('div','floor-label');
+  flbl.textContent = fp.name;
+  mapEl.appendChild(flbl);
+
+  // Spawn character dots
+  spawnCharDots(floorId, inner);
+}
+
+function el(tag, cls) {
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  return e;
+}
+
+function setPos(el, x, y, w, h) {
+  el.style.cssText += `position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;`;
+}
+
+/* ============================
+   CHARACTER DOT ANIMATION
+============================ */
+// Per-char animation state
+let dotStates = {}; // charId -> state
+let animRaf = null;
+let lastTs = null;
+const SPEED_ROOM = 5;   // design-units/sec (slow drift in room)
+const SPEED_CORR = 55;  // design-units/sec (normal walk in corridor)
+const SPEED_DOOR = 35;  // design-units/sec (entering/exiting)
+const IDLE_MIN = 8000, IDLE_MAX = 22000;
+
+function getRoomData(floorId, roomId) {
+  return FLOOR_PLANS[floorId].rooms.find(r=>r.id===roomId);
+}
+
+function getRoomCenter(room) {
+  return {x: room.x+room.w/2, y: room.y+room.h/2};
+}
+
+function getRoomDoorY(room) {
+  // corridor-facing wall y
+  return room.y < CY ? CY : CY + CH;
+}
+
+function getRoomDoorX(room) {
+  return room.x + room.w/2;
+}
+
+function initDotState(char) {
+  const fp = FLOOR_PLANS[char.floor];
+  if(!fp) return;
+  const room = fp.rooms.find(r=>r.id===char.room);
+  if(!room) return;
+  const c = getRoomCenter(room);
+  dotStates[char.id] = {
+    x: c.x, y: c.y,
+    phase: 'idle',       // idle | to_door | corridor | to_center
+    idleTimer: IDLE_MIN + Math.random()*(IDLE_MAX-IDLE_MIN),
+    driftTimer: 0,
+    driftTX: c.x, driftTY: c.y,
+    currentRoom: room,
+    targetRoom: null,
+    targetX: c.x, targetY: c.y,
+  };
+}
+
+function stepDot(id, state, char, floor, dt) {
+  const fp = FLOOR_PLANS[floor];
+  if(!fp) return;
+
+  switch(state.phase) {
+    case 'idle': {
+      // Gentle drift within room
+      state.driftTimer -= dt;
+      if(state.driftTimer <= 0) {
+        state.driftTimer = 1200 + Math.random()*2000;
+        const r = state.currentRoom;
+        state.driftTX = r.x+5+Math.random()*(r.w-10);
+        state.driftTY = r.y+5+Math.random()*(r.h-10);
+      }
+      moveTo(state, state.driftTX, state.driftTY, SPEED_ROOM * dt/1000);
+
+      // Decide to walk
+      state.idleTimer -= dt;
+      if(state.idleTimer <= 0 && fp.rooms.length > 1) {
+        state.phase = 'to_door';
+        const r = state.currentRoom;
+        state.targetX = getRoomDoorX(r);
+        state.targetY = getRoomDoorY(r);
+      }
+      break;
+    }
+    case 'to_door': {
+      const arrived = moveTo(state, state.targetX, state.targetY, SPEED_DOOR * dt/1000);
+      if(arrived) {
+        state.phase = 'to_corr_center';
+        state.targetY = CCY;
+      }
+      break;
+    }
+    case 'to_corr_center': {
+      const arrived = moveTo(state, state.targetX, CCY, SPEED_DOOR * dt/1000);
+      if(arrived) {
+        // Pick target room
+        const others = fp.rooms.filter(r=>r.id !== state.currentRoom.id);
+        const tr = others[Math.floor(Math.random()*others.length)];
+        state.targetRoom = tr;
+        state.targetX = getRoomDoorX(tr);
+        state.phase = 'corridor';
+      }
+      break;
+    }
+    case 'corridor': {
+      const arrived = moveTo(state, state.targetX, CCY, SPEED_CORR * dt/1000);
+      if(arrived) {
+        state.phase = 'to_room_door';
+        state.targetY = getRoomDoorY(state.targetRoom);
+      }
+      break;
+    }
+    case 'to_room_door': {
+      const arrived = moveTo(state, state.targetX, state.targetY, SPEED_DOOR * dt/1000);
+      if(arrived) {
+        state.phase = 'to_room_center';
+        const c = getRoomCenter(state.targetRoom);
+        state.targetX = c.x; state.targetY = c.y;
+      }
+      break;
+    }
+    case 'to_room_center': {
+      const arrived = moveTo(state, state.targetX, state.targetY, SPEED_DOOR * dt/1000);
+      if(arrived) {
+        state.currentRoom = state.targetRoom;
+        state.targetRoom = null;
+        state.phase = 'idle';
+        state.idleTimer = IDLE_MIN + Math.random()*(IDLE_MAX-IDLE_MIN);
+        state.driftTimer = 0;
+      }
+      break;
+    }
+  }
+}
+
+function moveTo(state, tx, ty, maxDist) {
+  const dx = tx - state.x;
+  const dy = ty - state.y;
+  const d = Math.sqrt(dx*dx+dy*dy);
+  if(d <= maxDist || d < 0.3) {
+    state.x = tx; state.y = ty;
+    return true;
+  }
+  state.x += (dx/d)*maxDist;
+  state.y += (dy/d)*maxDist;
+  return false;
+}
+
+function spawnCharDots(floorId, container) {
+  // Remove old
+  container.querySelectorAll('.plan-cdot').forEach(d=>d.remove());
+
+  const chars = ST.chars.filter(c=>c.floor===floorId);
+  chars.forEach(char => {
+    if(!dotStates[char.id]) initDotState(char);
+
+    const dotEl = el('div','plan-cdot');
+    dotEl.id = 'dot_'+char.id;
+    dotEl.style.background = char.color;
+    dotEl.style.boxShadow = `0 0 8px ${char.color}, 0 0 16px ${char.color}44`;
+    dotEl.querySelector = null; // lighter
+    dotEl.style.marginLeft = '-3.5px';
+    dotEl.style.marginTop = '-3.5px';
+    dotEl.style.setProperty('--c', char.color);
+    dotEl.style.cssText += `--c:${char.color};`;
+
+    // pulse ring color
+    const style = document.createElement('style');
+    style.textContent = `#dot_${char.id}::after{background:${char.color}}`;
+    document.head.appendChild(style);
+
+    container.appendChild(dotEl);
+
+    // Set initial position
+    const ds = dotStates[char.id];
+    dotEl.style.transform = `translate(${ds.x}px,${ds.y}px)`;
+  });
+
+  startAnim(floorId);
+}
+
+function startAnim(floorId) {
+  if(animRaf) { cancelAnimationFrame(animRaf); animRaf=null; }
+  lastTs = null;
+  const chars = ST.chars.filter(c=>c.floor===floorId);
+  if(chars.length===0) return;
+
+  function loop(ts) {
+    if(!lastTs) lastTs = ts;
+    const dt = Math.min(ts-lastTs, 100); // cap dt at 100ms
+    lastTs = ts;
+
+    const container = document.getElementById('planInner');
+    if(!container) { animRaf=null; return; }
+
+    chars.forEach(char => {
+      const ds = dotStates[char.id];
+      if(!ds) return;
+      stepDot(char.id, ds, char, floorId, dt);
+      const dotEl = document.getElementById('dot_'+char.id);
+      if(dotEl) {
+        dotEl.style.transform = `translate(${ds.x}px,${ds.y}px)`;
+      }
+    });
+
+    animRaf = requestAnimationFrame(loop);
+  }
+  animRaf = requestAnimationFrame(loop);
+}
+
+/* ============================
+   MAIN RENDER
+============================ */
+function render() {
+  renderTabs();
+  buildFloorPlan(ST.floor);
+  document.getElementById('hCount').innerHTML = `<span>${ST.chars.length}</span>人`;
+}
+
+function renderTabs() {
+  const el2 = document.getElementById('floorTabs');
+  el2.innerHTML = FLOOR_ORDER.map(fid => {
+    const fp = FLOOR_PLANS[fid];
+    const has = ST.chars.some(c=>c.floor===fid);
+    return `<button class="floor-tab${fid===ST.floor?' active':''}${has?' has-chars':''}"
+      onclick="switchFloor('${fid}')">${fp.label}<span class="tdot"></span></button>`;
+  }).join('');
+}
+
+function switchFloor(id) {
+  ST.floor = id;
+  if(animRaf){cancelAnimationFrame(animRaf);animRaf=null;}
+  render();
+}
+
+/* ============================
+   ROOM PANEL
+============================ */
+function openRoom(floorId, roomId) {
+  const fp = FLOOR_PLANS[floorId];
+  const room = fp.rooms.find(r=>r.id===roomId);
+  const chars = ST.chars.filter(c=>c.floor===floorId&&c.room===roomId);
+
+  document.getElementById('rPTitle').textContent = room.name.replace('\n','');
+  document.getElementById('rPMeta').textContent = `${fp.name} · ${chars.length}人`;
+
+  const body = document.getElementById('rPBody');
+  if(chars.length===0){
+    body.innerHTML=`<div class="empty-st"><div class="empty-ic">🪟</div><div class="empty-tx">まだキャラクターがいません<br>＋ボタンから追加できます</div></div>`;
+  } else {
+    body.innerHTML = chars.map(ch=>`
+      <div class="char-item" onclick="openChar('${ch.id}')">
+        <div class="char-avatar" style="background:${ch.color}18;border:1px solid ${ch.color}44;">
+          <span style="color:${ch.color}">${ch.name.charAt(0)}</span>
+        </div>
+        <div class="char-info">
+          <div class="char-name">${esc(ch.name)}</div>
+          <div class="char-sub">${room.name.replace('\n','')}</div>
+        </div>
+        <div class="char-arr">›</div>
+      </div>`).join('');
+  }
+  showPanel('roomPanel');
+}
+
+/* ============================
+   CHAR DETAIL
+============================ */
+function openChar(id) {
+  const ch = ST.chars.find(c=>c.id===id);
+  if(!ch) return;
+  const fp = FLOOR_PLANS[ch.floor];
+  const room = fp.rooms.find(r=>r.id===ch.room);
+
+  document.getElementById('cPBody').innerHTML = `
+    <div class="detail-wrap">
+      <button class="btn-back" onclick="closeCharPanel()">‹ 戻る</button>
+      <div class="detail-hero">
+        <div class="detail-av" style="background:${ch.color}18;border:1px solid ${ch.color}44;">
+          <span style="color:${ch.color}">${ch.name.charAt(0)}</span>
+        </div>
+        <div class="detail-name">${esc(ch.name)}</div>
+        <div class="detail-loc">${fp.name} — ${room.name.replace('\n','')}</div>
+      </div>
+      <div class="detail-row"><div class="detail-lbl">名前</div><div class="detail-val">${esc(ch.name)}</div></div>
+      <div class="detail-row"><div class="detail-lbl">所属</div><div class="detail-val">${fp.name} ${room.name.replace('\n','')}</div></div>
+      ${ch.info?`<div class="detail-row"><div class="detail-lbl">その他情報</div><div class="detail-val">${esc(ch.info)}</div></div>`:''}
+      <button class="btn-del" onclick="deleteChar('${ch.id}')">このキャラクターを削除</button>
+    </div>`;
+  showPanel('charPanel');
+}
+
+function closeCharPanel() { hidePanel('charPanel'); }
+
+function deleteChar(id) {
+  ST.chars = ST.chars.filter(c=>c.id!==id);
+  delete dotStates[id];
+  saveData();
+  closeCharPanel();
+  hidePanels();
+  render();
+}
+
+/* ============================
+   ADD MODAL
+============================ */
+function initModal() {
+  const fs = document.getElementById('iFloor');
+  fs.innerHTML = FLOOR_ORDER.map(fid=>{
+    const fp=FLOOR_PLANS[fid];
+    return `<option value="${fid}">${fp.label} — ${fp.name}</option>`;
+  }).join('');
+  fs.value = ST.floor;
+  fs.addEventListener('change',updateRoomSel);
+  updateRoomSel();
+
+  const sw = document.getElementById('swatches');
+  sw.innerHTML = COLORS.map((c,i)=>
+    `<div class="swatch${i===0?' sel':''}" style="background:${c}" data-c="${c}" onclick="pickColor('${c}',this)"></div>`
+  ).join('');
+
+  document.getElementById('fabBtn').onclick = ()=>openModal();
+  document.getElementById('modalOv').onclick = closeModal;
+  document.getElementById('subBtn').onclick = addChar;
+}
+
+function updateRoomSel() {
+  const fid = document.getElementById('iFloor').value;
+  const fp = FLOOR_PLANS[fid];
+  document.getElementById('iRoom').innerHTML = fp.rooms.map(r=>
+    `<option value="${r.id}">${r.name.replace('\n','')}</option>`
+  ).join('');
+}
+
+function pickColor(c, el2) {
+  selColor = c;
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('sel'));
+  el2.classList.add('sel');
+}
+
+function openModal() {
+  document.getElementById('iFloor').value = ST.floor;
+  updateRoomSel();
+  document.getElementById('addModal').classList.add('show');
+  document.getElementById('modalOv').classList.add('show');
+  setTimeout(()=>document.getElementById('iName').focus(),400);
+}
+
+function closeModal() {
+  document.getElementById('addModal').classList.remove('show');
+  document.getElementById('modalOv').classList.remove('show');
+}
+
+function addChar() {
+  const name = document.getElementById('iName').value.trim();
+  if(!name){ document.getElementById('iName').style.borderColor='rgba(220,80,80,.5)'; setTimeout(()=>document.getElementById('iName').style.borderColor='',800); return; }
+  const ch = {
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2),
+    name,
+    floor: document.getElementById('iFloor').value,
+    room: document.getElementById('iRoom').value,
+    info: document.getElementById('iInfo').value.trim(),
+    color: selColor,
+  };
+  ST.chars.push(ch);
+  initDotState(ch);
+  saveData();
+  document.getElementById('iName').value='';
+  document.getElementById('iInfo').value='';
+  closeModal();
+  if(ch.floor!==ST.floor) ST.floor=ch.floor;
+  render();
+}
+
+/* ============================
+   PANEL HELPERS
+============================ */
+function showPanel(id) {
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById(id).classList.add('show');
+}
+function hidePanel(id) {
+  document.getElementById(id).classList.remove('show');
+}
+function hidePanels() {
+  hidePanel('roomPanel'); hidePanel('charPanel');
+  document.getElementById('overlay').classList.remove('show');
+}
+document.getElementById('overlay').onclick = hidePanels;
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ============================
+   INIT
+============================ */
+loadData();
+initStars();
+initModal();
+render();
+
+// Re-render on resize
+window.addEventListener('resize', ()=>{ if(ST.floor) { if(animRaf){cancelAnimationFrame(animRaf);animRaf=null;} buildFloorPlan(ST.floor); } });
+</script>
+
+</body>
+</html>
