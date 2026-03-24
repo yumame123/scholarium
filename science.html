@@ -41,10 +41,11 @@ const ctx = canvas.getContext("2d");
 
 let W, H;
 function resize(){
-  W = canvas.width = 240;
-  H = canvas.height = 400;
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
 }
 resize();
+window.addEventListener('resize', resize);
 
 let mode = "day";
 let t = 0;
@@ -70,28 +71,30 @@ function draw(){
   }
   ctx.fillRect(0,0,W,H);
 
-  // 部屋枠
+  // 部屋枠（画面中央に配置）
+  let roomX = W/2 - 100;
+  let roomY = H/2 - 150;
   ctx.fillStyle = "#3a3a3a";
-  ctx.fillRect(20,40,200,300);
+  ctx.fillRect(roomX,roomY,200,300);
 
   // 窓
   ctx.fillStyle = (mode==="day") ? "#fff4c0" : "#223355";
-  ctx.fillRect(60,60,120,80);
+  ctx.fillRect(roomX+40,roomY+20,120,80);
 
   // カーテン（揺れ）
   let sway = Math.sin(t)*4;
   ctx.fillStyle="#dcdcdc";
-  ctx.fillRect(60+sway,60,20,80);
-  ctx.fillRect(160+sway,60,20,80);
+  ctx.fillRect(roomX+40+sway,roomY+20,20,80);
+  ctx.fillRect(roomX+140+sway,roomY+20,20,80);
 
   // 机
   ctx.fillStyle="#6b4f2a";
-  ctx.fillRect(80,200,80,10);
+  ctx.fillRect(roomX+60,roomY+160,80,10);
 
   // 散らかった物（ランダム風固定）
   for(let i=0;i<40;i++){
-    let x = 30 + (i*13)%180;
-    let y = 150 + (i*17)%160;
+    let x = roomX + 10 + (i*13)%180;
+    let y = roomY + 110 + (i*17)%160;
     ctx.fillStyle = ["#888","#aaa","#bbb","#999"][i%4];
     ctx.fillRect(x,y,3,3);
   }
@@ -99,16 +102,16 @@ function draw(){
   // ガラス反射
   let sparkle = (Math.sin(t*3)+1)/2;
   ctx.fillStyle = `rgba(255,255,255,${sparkle*0.6})`;
-  ctx.fillRect(100,160,4,4);
-  ctx.fillRect(130,180,3,3);
+  ctx.fillRect(roomX+80,roomY+120,4,4);
+  ctx.fillRect(roomX+110,roomY+140,3,3);
 
   // 光
   if(mode==="day"){
     ctx.fillStyle="rgba(255,240,180,0.25)";
-    ctx.fillRect(60,60,120,200);
+    ctx.fillRect(roomX+40,roomY+20,120,200);
   }else{
     ctx.fillStyle="rgba(120,150,255,0.15)";
-    ctx.fillRect(60,60,120,200);
+    ctx.fillRect(roomX+40,roomY+20,120,200);
   }
 
   // 夜の影（クジラ的）
@@ -118,7 +121,7 @@ function draw(){
 
     ctx.fillStyle="rgba(0,0,0,0.6)";
     ctx.beginPath();
-    ctx.ellipse(whaleX,90,40,12,0,0,Math.PI*2);
+    ctx.ellipse(whaleX,roomY+50,40,12,0,0,Math.PI*2);
     ctx.fill();
   }
 
