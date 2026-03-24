@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>理科準備室 - 安寧と静謐</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html {
+            width: 100%; 
+            height: 100%;
+            background-color: #030406;
+            /* スクロールやバウンス（引っ張って更新など）を防止 */
+            overflow: hidden;
+            position: fixed;
+            touch-action: none;
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+        }
+        #canvas-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        canvas {
+            /* Safariでドット絵をぼやけさせないための指定を網羅 */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+        }
+        #ui-container {
+            position: absolute;
+            /* iPhoneのホームバー（下部の線）に被らないように安全領域を確保 */
+            bottom: calc(env(safe-area-inset-bottom, 20px) + 30px);
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #toggle-btn {
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 14px 28px;
+            font-size: 15px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            /* タップ時のハイライトを消す */
+            -webkit-tap-highlight-color: transparent;
+        }
+        #toggle-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div id="canvas-container">
+    <canvas id="screen"></canvas>
+</div>
+<div id="ui-container">
+    <button id="toggle-btn">夜モードへ</button>
+</div>
+
+<script>
+    const canvas = document.getElementById('screen');
+    const ctx = canvas.getContext('2d', { alpha: false }); // 軽量化のため透過オフ
+    
+    // ドット絵の内部解像度（縦長）
+    const W = 144;
+    const H = 256;
+    canvas.width = W;
+    canvas.height = H;
+    
+    // Safariでのアンチエイリアス（ぼやけ）をJS側でも無効化
+    ctx.imageSmoothingEnabled = false;
+
+    // 画面サイズに合わせてCanvasをCSSのtransformで拡大する関数
+    // object-fitの代わりにこれを使うことでSafariでのぼやけやレイアウト崩れを防ぎます
+    function resizeCanvas() {
+        const scaleX = window.innerWidth / W;
+        const scaleY = window.innerHeight / H;
+        const scale = Math.max(scaleX, scaleY); // 画面全体を覆うように拡大（cover相当）
+        canvas.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // 状態管理
+    let time = 0;
+    let isDay = true;
+    let transition = 1.0; 
+    let targetTransition = 1.0;
+    
+    let whale = { active: false, x: -100, y: 70 };
+
+    function lerp(a, b, t) {
+        return a + (b - a) * t;
+    }
+    function lColor(r1, g1, b1, r2, g2, b2, t) {
+        return `rgb(${Math.floor(lerp(r1, r2, t))}, ${Math.floor(lerp(g1, g2, t))}, ${Math.floor(lerp(b1, b2, t))})`;
+    }
+
+    // 備品データ (cd=昼の色, cn=夜の色)
+    const clutter = [
+        {x: 0, y: 150, w: 28, h: 106, cd: [110,95,80], cn: [12,15,20]}, 
+        {x: 0, y: 120, w: 22, h: 30, cd: [130,110,85], cn: [10,12,16]}, 
+        {x: 116, y: 130, w: 28, h: 126, cd: [100,85,70], cn: [14,16,22]}, 
+        {x: 120, y: 100, w: 24, h: 30, cd: [120,105,80], cn: [11,13,18]}, 
+        {x: 28, y: 170, w: 88, h: 86, cd: [90,70,55], cn: [8,10,14]}, 
+        {x: 35, y: 160, w: 20, h: 10, cd: [150,135,110], cn: [12,15,20]}, 
+        {x: 90, y: 155, w: 15, h: 15, cd: [120,115,110], cn: [10,12,16]}  
+    ];
+
+    const glassware = [
+        {x: 55, y: 152, w: 8, h: 18}, {x: 65, y: 160, w: 6, h: 10}, 
+        {x: 73, y: 148, w: 10, h: 22}, {x: 45, y: 162, w: 6, h: 8},  
+        {x: 122, y: 115, w: 8, h: 15}, {x: 132, y: 120, w: 6, h: 10}, 
+        {x: 8, y: 135, w: 8, h: 15}   
+    ];
+
+    function draw() {
+        time++;
+        transition += (targetTransition - transition) * 0.04; // 滑らかな切り替え
+
+        // 1. 背景の空
+        let skyR = lerp(8, 255, transition);
+        let skyG = lerp(12, 252, transition);
+        let skyB = lerp(20, 235, transition);
+        ctx.fillStyle = `rgb(${skyR},${skyG},${skyB})`;
+        ctx.fillRect(0, 0, W, H);
+
+        // 2. 鯨のシルエット（夜のみ）
+        if (targetTransition < 0.5) {
+            if (!whale.active && Math.random() < 0.003) {
+                whale.active = true;
+                whale.x = -60;
+                whale.y = 60 + Math.random() * 30;
+            }
+            if (whale.active) {
+                whale.x += 0.2;
+                if (whale.x > W + 80) whale.active = false;
+                
+                ctx.fillStyle = lColor(4, 6, 10, 255, 255, 255, transition);
+                ctx.beginPath();
+                ctx.ellipse(whale.x, whale.y, 40, 12, 0, 0, Math.PI*2); 
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(whale.x - 30, whale.y);
+                ctx.lineTo(whale.x - 50, whale.y - 15);
+                ctx.lineTo(whale.x - 45, whale.y + 10); 
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(whale.x + 10, whale.y + 10, 15, 4, Math.PI/6, 0, Math.PI*2); 
+                ctx.fill();
+            }
+        }
+
+        // 3. 部屋の壁・窓枠
+        ctx.fillStyle = lColor(6, 8, 12, 60, 50, 45, transition);
+        ctx.fillRect(0, 0, W, 30); 
+        ctx.fillRect(0, 30, 24, 120); 
+        ctx.fillRect(120, 30, 24, 120); 
+        ctx.fillRect(0, 150, W, H - 150); 
+
+        ctx.fillStyle = lColor(4, 5, 8, 40, 35, 30, transition);
+        ctx.fillRect(22, 28, 98, 4); 
+        ctx.fillRect(22, 148, 98, 4); 
+        ctx.fillRect(22, 28, 4, 124); 
+        ctx.fillRect(118, 28, 4, 124); 
+
+        // 4. 備品
+        clutter.forEach(c => {
+            ctx.fillStyle = lColor(c.cn[0], c.cn[1], c.cn[2], c.cd[0], c.cd[1], c.cd[2], transition);
+            ctx.fillRect(c.x, c.y, c.w, c.h);
+        });
+
+        // 5. カーテン
+        ctx.fillStyle = lColor(12, 16, 24, 230, 220, 210, transition);
+        for(let y = 32; y < 148; y++) {
+            let wind = Math.floor(Math.sin(time * 0.02 + y * 0.05) * (y / 150) * 5);
+            ctx.fillRect(26 + wind, y, 16 - Math.floor(wind/2), 1);
+        }
+        for(let y = 32; y < 148; y++) {
+            let wind = Math.floor(Math.sin(time * 0.02 + y * 0.05 + Math.PI) * (y / 150) * 5);
+            ctx.fillRect(102 + Math.floor(wind/2), y, 16 - wind, 1);
+        }
+
+        // 6. ガラス・実験器具と反射
+        glassware.forEach(g => {
+            ctx.fillStyle = lColor(25, 35, 50, 160, 190, 200, transition);
+            ctx.fillRect(g.x, g.y, g.w, g.h);
+            
+            // ガラスのキラキラ反射
+            let shine = Math.pow(Math.sin(time * 0.04 + g.x), 8); 
+            ctx.fillStyle = `rgba(255, 255, 255, ${shine * 0.8})`;
+            ctx.fillRect(g.x + 2, g.y + 2, 2, 4);
+        });
+
+        // 7. 光の演出 (合成モードの相性問題を避けるため、標準描画で光を重ねる)
+        if (transition > 0.01) {
+            let dayLight = ctx.createRadialGradient(W/2, 80, 10, W/2, 100, 140);
+            dayLight.addColorStop(0, `rgba(255, 245, 200, ${0.4 * transition})`);
+            dayLight.addColorStop(1, `rgba(255, 210, 120, 0)`);
+            ctx.fillStyle = dayLight;
+            ctx.fillRect(0, 0, W, H);
+        }
+
+        if (transition < 0.99) {
+            let nightLight = ctx.createLinearGradient(0, 0, W, H);
+            nightLight.addColorStop(0, `rgba(160, 180, 255, ${0.1 * (1 - transition)})`);
+            nightLight.addColorStop(0.5, `rgba(80, 100, 180, ${0.05 * (1 - transition)})`);
+            nightLight.addColorStop(1, `rgba(0, 0, 0, ${0.6 * (1 - transition)})`);
+            ctx.fillStyle = nightLight;
+            ctx.fillRect(0, 0, W, H);
+            
+            // 夜の埃
+            for(let i=0; i<8; i++) {
+                let px = Math.floor((Math.sin(time * 0.01 + i * 10) * 100 + 100)) % W;
+                let py = Math.floor(time * 0.2 + i * 30) % H;
+                ctx.fillStyle = `rgba(180, 200, 255, ${Math.random() * 0.4 * (1 - transition)})`;
+                ctx.fillRect(px, py, 1, 1);
+            }
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    // モード切替
+    const btn = document.getElementById('toggle-btn');
+    btn.addEventListener('click', () => {
+        isDay = !isDay;
+        targetTransition = isDay ? 1.0 : 0.0;
+        btn.textContent = isDay ? "夜モードへ" : "昼モードへ";
+        
+        if(isDay) {
+            btn.style.background = "rgba(255, 255, 255, 0.15)";
+            btn.style.color = "#fff";
+            btn.style.borderColor = "rgba(255, 255, 255, 0.4)";
+        } else {
+            btn.style.background = "rgba(0, 0, 0, 0.4)";
+            btn.style.color = "#ddd";
+            btn.style.borderColor = "rgba(255, 255, 255, 0.1)";
+        }
+    });
+
+    // 描画開始
+    draw();
+</script>
+
+</body>
+</html>
