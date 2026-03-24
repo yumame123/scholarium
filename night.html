@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Character Mapper - Nightfall -</title>
+    <style>
+        :root {
+            --bg-color: #080a12; /* 深い夜の青黒 */
+            --grid-color: rgba(255, 255, 255, 0.03);
+            --room-bg: rgba(20, 25, 45, 0.4);
+            --room-border: #2a3250;
+            --room-hover: rgba(40, 50, 80, 0.6);
+            --text-main: #b8c0d8;
+            --text-muted: #626c8a;
+            --accent-gold: #c2a878;
+            --accent-purple: #6a4c93;
+            --wisp-color: rgba(194, 168, 120, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Yu Mincho', 'Sawarabi Mincho', 'Hiragino Mincho ProN', serif;
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header & Floor Selector */
+        header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to bottom, rgba(8,10,18,1), rgba(8,10,18,0));
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: normal;
+            letter-spacing: 2px;
+            color: var(--text-main);
+            text-shadow: 0 0 10px rgba(184, 192, 216, 0.2);
+        }
+
+        .floor-selector select {
+            background: transparent;
+            border: 1px solid var(--room-border);
+            color: var(--accent-gold);
+            padding: 5px 10px;
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .floor-selector select option {
+            background: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        /* Map Container */
+        .map-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .map-container {
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 16 / 9;
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: 2fr 0.5fr 1.5fr;
+            gap: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .map-container {
+                aspect-ratio: auto;
+                height: 400px;
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+            }
+        }
+
+        .room {
+            background: var(--room-bg);
+            border: 1px solid var(--room-border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .room:hover {
+            background: var(--room-hover);
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 15px rgba(194, 168, 120, 0.1);
+        }
+
+        .room.special {
+            border-color: rgba(106, 76, 147, 0.6);
+        }
+
+        .room-name {
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .char-count {
+            font-size: 0.7rem;
+            color: var(--accent-gold);
+            margin-top: 4px;
+            opacity: 0.8;
+        }
+
+        .hallway {
+            grid-column: 1 / -1;
+            background: transparent;
+            border: 1px dashed var(--room-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            letter-spacing: 4px;
+        }
+
+        /* Floating Wisps (Characters) */
+        .wisp {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--wisp-color);
+            border-radius: 50%;
+            box-shadow: 0 0 8px 2px var(--wisp-color);
+            pointer-events: none;
+            transition: top 5s ease-in-out, left 5s ease-in-out;
+            z-index: 5;
+            opacity: 0.7;
+            animation: pulse 3s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 0.4; }
+            100% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        /* FAB (Add Button) */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(194, 168, 120, 0.3);
+            transition: transform 0.2s;
+            z-index: 100;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(3px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--bg-color);
+            border: 1px solid var(--room-border);
+            width: 90%;
+            max-width: 400px;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px; right: 15px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .modal-title {
+            color: var(--accent-gold);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--room-border);
+            padding-bottom: 10px;
+        }
+
+        /* Forms & Lists */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            background: rgba(20, 25, 45, 0.8);
+            border: 1px solid var(--room-border);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        .form-group textarea {
+            resize: vertical;
+            height: 80px;
+        }
+        button.submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s;
+            margin-top: 10px;
+        }
+        button.submit-btn:hover {
+            background: var(--accent-gold);
+            color: var(--bg-color);
+        }
+
+        .char-list-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--room-border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .char-list-item:hover {
+            background: rgba(194, 168, 120, 0.1);
+        }
+        .char-detail p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .back-btn {
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+        .back-btn:hover { color: var(--text-main); }
+        
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>私立ノスタルヂア学園</h1>
+        <div class="floor-selector">
+            <select id="floor-select">
+                <option value="5F">5F</option>
+                <option value="4F">4F</option>
+                <option value="3F">3F</option>
+                <option value="2F">2F</option>
+                <option value="1F" selected>1F</option>
+                <option value="B1">B1</option>
+            </select>
+        </div>
+    </header>
+
+    <div class="map-wrapper">
+        <div class="map-container" id="map-container">
+            </div>
+    </div>
+
+    <div class="fab" onclick="openModal('add-modal')">＋</div>
+
+    <div class="modal-overlay" id="add-modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('add-modal')">✖</span>
+            <div class="modal-title">生徒を登録</div>
+            <div class="form-group">
+                <label>名前</label>
+                <input type="text" id="char-name" placeholder="例: 夕霧 花子">
+            </div>
+            <div class="form-group">
+                <label>配属場所（フロア - 部屋）</label>
+                <select id="char-room">
+                    </select>
+            </div>
+            <div class="form-group">
+                <label>詳細・設定</label>
+                <textarea id="char-info" placeholder="夕暮れ時にだけ音楽室に現れる...など"></textarea>
+            </div>
+            <button class="submit-btn" onclick="addCharacter()">登録する</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="room-modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('room-modal')">✖</span>
+            <div class="modal-title" id="room-modal-title">1年1組</div>
+            <div id="room-char-list">
+                </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="detail-modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('detail-modal')">✖</span>
+            <div class="back-btn" onclick="backToRoomModal()">← 一覧に戻る</div>
+            <div class="modal-title" id="detail-name">名前</div>
+            <div class="char-detail">
+                <p style="color: var(--text-muted); font-size: 0.8rem;" id="detail-class">所属</p>
+                <p id="detail-info" style="margin-top: 15px;">詳細テキスト</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- データ定義 ---
+        // 各階の部屋構成（画像の雰囲気を再現）
+        const floorData = {
+            '5F': [{ id: 'roof', name: '屋上', type: 'special' }],
+            '4F': [
+                { id: '4-1', name: '四年1組' }, { id: '4-2', name: '四年2組' }, { id: '4-3', name: '四年3組' },
+                { id: '4-4', name: '四年4組' }, { id: 'art', name: '美術室', type: 'special' }, { id: 'music', name: '音楽室', type: 'special' }
+            ],
+            '3F': [
+                { id: '3-1', name: '三年1組' }, { id: '3-2', name: '三年2組' }, { id: '3-3', name: '三年3組' },
+                { id: '3-4', name: '三年4組' }, { id: '3-5', name: '三年5組' }, { id: '3-6', name: '三年6組' }
+            ],
+            '2F': [
+                { id: '2-1', name: '二年1組' }, { id: '2-2', name: '二年2組' }, { id: '2-3', name: '二年3組' },
+                { id: '2-4', name: '二年4組' }, { id: '2-5', name: '二年5組' }, { id: '2-6', name: '二年6組' }
+            ],
+            '1F': [
+                { id: '1-1', name: '一年1組' }, { id: '1-2', name: '一年2組' }, { id: '1-3', name: '一年3組' },
+                { id: '1-4', name: '一年4組' }, { id: '1-5', name: '一年5組' }, { id: '1-6', name: '一年6組' },
+                { id: 'entrance', name: '玄関ホール', type: 'special' }, { id: 'office', name: '事務室' }, { id: 'staff', name: '職員室' },
+                { id: 'principal', name: '校長室' }, { id: 'nurse', name: '保健室' }
+            ],
+            'B1': [
+                { id: 'storage', name: '地下倉庫', type: 'special' }, { id: 'boiler', name: 'ボイラー室' }
+            ]
+        };
+
+        // キャラクターデータ保存用配列
+        let characters = [];
+        let currentFloor = '1F';
+        let currentRoomIdForModal = null; // 戻るボタン用の記憶
+
+        // --- 初期化処理 ---
+        window.onload = () => {
+            initRoomSelectOptions();
+            renderMap();
+            setInterval(moveWisps, 4000); // 4秒ごとに魂（キャラ）を移動させる
+        };
+
+        document.getElementById('floor-select').addEventListener('change', (e) => {
+            currentFloor = e.target.value;
+            renderMap();
+        });
+
+        // --- マップの描画 ---
+        function renderMap() {
+            const container = document.getElementById('map-container');
+            container.innerHTML = '';
+            
+            const rooms = floorData[currentFloor];
+            
+            // 廊下（視覚的装飾）を先に挿入 (1F〜4Fの場合)
+            if(['1F', '2F', '3F', '4F'].includes(currentFloor)) {
+                // 上段（教室等）を描画後、中断に廊下を入れるため少し特殊なレンダリング
+                rooms.slice(0, 6).forEach(room => container.appendChild(createRoomElement(room)));
+                
+                const hallway = document.createElement('div');
+                hallway.className = 'hallway';
+                hallway.innerText = '廊下';
+                container.appendChild(hallway);
+
+                rooms.slice(6).forEach(room => container.appendChild(createRoomElement(room)));
+            } else {
+                rooms.forEach(room => container.appendChild(createRoomElement(room)));
+            }
+
+            renderWisps();
+        }
+
+        function createRoomElement(room) {
+            const el = document.createElement('div');
+            el.className = `room ${room.type || ''}`;
+            el.onclick = () => openRoomModal(room.id, room.name);
+            
+            const count = characters.filter(c => c.roomId === room.id).length;
+            
+            el.innerHTML = `
+                <div class="room-name">${room.name}</div>
+                ${count > 0 ? `<div class="char-count">◆ ${count}名</div>` : ''}
+            `;
+            return el;
+        }
+
+        // --- フォームのセレクトボックス初期化 ---
+        function initRoomSelectOptions() {
+            const select = document.getElementById('char-room');
+            select.innerHTML = '';
+            Object.keys(floorData).forEach(floor => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = floor;
+                floorData[floor].forEach(room => {
+                    const option = document.createElement('option');
+                    option.value = room.id;
+                    option.dataset.floor = floor;
+                    option.dataset.roomName = room.name;
+                    option.innerText = room.name;
+                    optgroup.appendChild(option);
+                });
+                select.appendChild(optgroup);
+            });
+        }
+
+        // --- キャラクターの追加 ---
+        function addCharacter() {
+            const nameInput = document.getElementById('char-name').value.trim();
+            const roomSelect = document.getElementById('char-room');
+            const infoInput = document.getElementById('char-info').value.trim();
+            
+            if (!nameInput) {
+                alert('名前を入力してください。');
+                return;
+            }
+
+            const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+            
+            const newChar = {
+                id: Date.now().toString(),
+                name: nameInput,
+                roomId: selectedOption.value,
+                roomName: selectedOption.dataset.roomName,
+                floor: selectedOption.dataset.floor,
+                info: infoInput || '（詳細不明）'
+            };
+
+            characters.push(newChar);
+            
+            // フォームリセット
+            document.getElementById('char-name').value = '';
+            document.getElementById('char-info').value = '';
+            
+            closeModal('add-modal');
+            renderMap(); // 人数更新とWisp再生成のため
+        }
+
+        // --- モーダル制御 ---
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function openRoomModal(roomId, roomName) {
+            currentRoomIdForModal = { id: roomId, name: roomName };
+            document.getElementById('room-modal-title').innerText = roomName;
+            
+            const listContainer = document.getElementById('room-char-list');
+            listContainer.innerHTML = '';
+
+            const charsInRoom = characters.filter(c => c.roomId === roomId);
+            
+            if (charsInRoom.length === 0) {
+                listContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.9rem; text-align:center; padding: 20px 0;">誰もいないようだ...</p>';
+            } else {
+                charsInRoom.forEach(char => {
+                    const div = document.createElement('div');
+                    div.className = 'char-list-item';
+                    div.innerText = char.name;
+                    div.onclick = () => openDetailModal(char);
+                    listContainer.appendChild(div);
+                });
+            }
+
+            openModal('room-modal');
+        }
+
+        function openDetailModal(char) {
+            closeModal('room-modal'); // 裏のモーダルを閉じる
+            
+            document.getElementById('detail-name').innerText = char.name;
+            document.getElementById('detail-class').innerText = `[${char.floor}] ${char.roomName}`;
+            document.getElementById('detail-info').innerText = char.info;
+            
+            openModal('detail-modal');
+        }
+
+        function backToRoomModal() {
+            closeModal('detail-modal');
+            if (currentRoomIdForModal) {
+                openRoomModal(currentRoomIdForModal.id, currentRoomIdForModal.name);
+            }
+        }
+
+        // --- アニメーション（徘徊する魂/キャラクター） ---
+        // ※邪魔にならないよう、光の玉（Wisp）として表現し、マップ全体をゆっくり漂わせます。
+        function renderWisps() {
+            const container = document.getElementById('map-container');
+            // 既存のWispを削除
+            document.querySelectorAll('.wisp').forEach(w => w.remove());
+
+            // 現在のフロアにいるキャラクターの数だけWispを生成
+            const charsOnFloor = characters.filter(c => c.floor === currentFloor);
+            
+            charsOnFloor.forEach(char => {
+                const wisp = document.createElement('div');
+                wisp.className = 'wisp';
+                // 初期位置をランダムに
+                wisp.style.top = Math.random() * 90 + '%';
+                wisp.style.left = Math.random() * 90 + '%';
+                container.appendChild(wisp);
+            });
+        }
+
+        function moveWisps() {
+            const wisps = document.querySelectorAll('.wisp');
+            wisps.forEach(wisp => {
+                // 画面外に出ないように、10%〜90%の範囲でランダム移動
+                wisp.style.top = (10 + Math.random() * 80) + '%';
+                wisp.style.left = (10 + Math.random() * 80) + '%';
+            });
+        }
+    </script>
+</body>
+</html>
