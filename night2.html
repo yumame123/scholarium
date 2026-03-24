@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Character Mapper - Eternal Night -</title>
+    <style>
+        :root {
+            --bg-color: #080a12;
+            --grid-color: rgba(255, 255, 255, 0.03);
+            --room-bg: rgba(20, 25, 45, 0.4);
+            --room-border: #2a3250;
+            --room-hover: rgba(40, 50, 80, 0.6);
+            --text-main: #b8c0d8;
+            --text-muted: #626c8a;
+            --accent-gold: #c2a878;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Yu Mincho', serif;
+            background-color: var(--bg-color);
+            background-image: linear-gradient(var(--grid-color) 1px, transparent 1px), linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- UI Components --- */
+        header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to bottom, rgba(8,10,18,1), rgba(8,10,18,0));
+            z-index: 100;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: normal;
+            letter-spacing: 2px;
+            cursor: text;
+            padding: 2px 8px;
+            border-bottom: 1px dashed transparent;
+        }
+        h1:focus { outline: none; border-color: var(--accent-gold); }
+
+        .floor-selector select {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--room-border);
+            color: var(--accent-gold);
+            padding: 5px 10px;
+            font-family: inherit;
+            border-radius: 4px;
+        }
+
+        /* --- Map Layout --- */
+        .map-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .map-container {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(6, 140px);
+            grid-template-rows: 100px 50px 100px;
+            gap: 8px;
+            background: rgba(255,255,255,0.02);
+            padding: 15px;
+            border: 1px solid var(--room-border);
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
+        /* 屋上用の特別なグリッド表示 */
+        .map-container.roof-mode {
+            grid-template-rows: 125px 0px 125px;
+            gap: 0;
+        }
+        .map-container.roof-mode .hallway { display: none; }
+
+        .room {
+            background: var(--room-bg);
+            border: 1px solid var(--room-border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.3s;
+            position: relative;
+            z-index: 2;
+        }
+        .room:hover { background: var(--room-hover); border-color: var(--accent-gold); }
+        .room.empty { opacity: 0.3; cursor: default; }
+        .room-name { font-size: 0.8rem; text-align: center; pointer-events: none; }
+        .char-count { font-size: 0.65rem; color: var(--accent-gold); margin-top: 5px; }
+
+        .hallway {
+            grid-column: 1 / -1;
+            border: 1px dashed var(--room-border);
+            background: rgba(255,255,255,0.01);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            letter-spacing: 10px;
+            z-index: 1;
+        }
+
+        /* --- Character Wisp --- */
+        .wisp-container {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+            z-index: 10;
+            /* 移動はJSのtransition時間制御で行う */
+            transition-property: top, left;
+            transition-timing-function: linear; 
+            transform: translate(-50%, -50%);
+        }
+
+        .wisp-name {
+            font-size: 10px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            text-shadow: 0 0 4px #000;
+        }
+
+        .wisp {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            filter: blur(1px);
+            box-shadow: 0 0 10px currentColor;
+            animation: breathe 2s infinite alternate;
+        }
+
+        @keyframes breathe {
+            from { transform: scale(0.8); opacity: 0.6; }
+            to { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* --- Modals & Buttons --- */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            z-index: 200;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: var(--bg-color);
+            border: 1px solid var(--room-border);
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 10px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            background: #121626;
+            border: 1px solid var(--room-border);
+            color: #fff;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: inherit;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-gold);
+            border: none;
+            color: #000;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 10px;
+        }
+        .btn-del { background: transparent; border: 1px solid #c27878; color: #c27878; margin-top: 20px; }
+
+        .char-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--room-border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="school-name" contenteditable="true" onblur="saveAll()">私立ノスタルヂア学園</h1>
+        <div class="floor-selector">
+            <select id="floor-select" onchange="changeFloor()">
+                <option value="5F">5F (屋上)</option>
+                <option value="4F">4F</option>
+                <option value="3F">3F</option>
+                <option value="2F">2F</option>
+                <option value="1F" selected>1F</option>
+                <option value="B1">B1</option>
+            </select>
+        </div>
+    </header>
+
+    <div class="map-wrapper">
+        <div class="map-container" id="map-container">
+            </div>
+    </div>
+
+    <div class="fab" onclick="openModal('add-modal')">＋</div>
+
+    <div class="modal-overlay" id="add-modal" onclick="if(event.target==this)closeModal('add-modal')">
+        <div class="modal-content">
+            <h3>新しい生徒を登録</h3>
+            <input type="text" id="add-name" placeholder="名前">
+            <select id="add-room"></select>
+            <div style="display:flex; gap:5px; margin: 10px 0;">
+                <label>オーラの色:</label>
+                <input type="color" id="add-color" value="#c2a878" style="padding:0; height:30px; width:60px;">
+            </div>
+            <textarea id="add-info" placeholder="詳細設定..."></textarea>
+            <button class="btn" onclick="addCharacter()">登録</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="list-modal" onclick="if(event.target==this)closeModal('list-modal')">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 id="list-title">教室名</h3>
+                <button style="font-size:0.7rem; background:none; border:1px solid var(--text-muted); color:var(--text-muted); padding:2px 5px;" onclick="renameRoom()">名変</button>
+            </div>
+            <div id="char-list-container" style="margin-top:20px;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="detail-modal" onclick="if(event.target==this)closeModal('detail-modal')">
+        <div class="modal-content">
+            <h2 id="det-name"></h2>
+            <p id="det-room" style="font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;"></p>
+            <p id="det-info" style="white-space:pre-wrap;"></p>
+            <button class="btn-del" onclick="deleteChar()">この存在を消去する</button>
+            <button class="btn" style="background:#2a3250; color:#fff;" onclick="closeModal('detail-modal')">閉じる</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 定数と初期データ ---
+        const WALK_SPEED = 80; // px/sec
+        const ROWS = { TOP: 0, HALL: 1, BOTTOM: 2 };
+        
+        let state = {
+            schoolName: "私立ノスタルヂア学園",
+            floorData: {},
+            characters: []
+        };
+
+        const defaultFloorStructure = (f) => ({
+            top: [
+                { id: f+'t1', name: f+'階 教室1' }, { id: f+'t2', name: f+'階 教室2' }, { id: f+'t3', name: f+'階 教室3' },
+                { id: f+'t4', name: f+'階 教室4' }, { id: f+'t5', name: f+'階 教室5' }, { id: f+'t6', name: f+'階 教室6' }
+            ],
+            bottom: [
+                { id: f+'b1', name: f+'階 教室7' }, { id: f+'b2', name: f+'階 教室8' }, { id: f+'b3', name: f+'階 教室9' },
+                { id: f+'b4', name: f+'階 教室10' }, { id: f+'b5', name: f+'階 教室11' }, { id: f+'b6', name: f+'階 教室12' }
+            ]
+        });
+
+        // --- 2. データ管理 (保存・読込) ---
+        function saveAll() {
+            state.schoolName = document.getElementById('school-name').innerText;
+            localStorage.setItem('school_mapper_save', JSON.stringify(state));
+        }
+
+        function loadAll() {
+            const saved = localStorage.getItem('school_mapper_save');
+            if (saved) {
+                state = JSON.parse(saved);
+                document.getElementById('school-name').innerText = state.schoolName;
+            } else {
+                ['5F','4F','3F','2F','1F','B1'].forEach(f => {
+                    state.floorData[f] = defaultFloorStructure(f);
+                });
+            }
+            updateRoomSelect();
+            renderMap();
+            // キャラクター表示の初期化
+            state.characters.forEach(c => createWispElement(c));
+        }
+
+        // --- 3. マップ描画とUI ---
+        function renderMap() {
+            const floor = document.getElementById('floor-select').value;
+            const container = document.getElementById('map-container');
+            container.innerHTML = '';
+            
+            if (floor === '5F') container.classList.add('roof-mode');
+            else container.classList.remove('roof-mode');
+
+            const data = state.floorData[floor];
+            
+            data.top.forEach((r, i) => container.appendChild(createRoomEl(r, i, ROWS.TOP)));
+            
+            const hall = document.createElement('div');
+            hall.className = 'hallway';
+            hall.innerText = 'HALLWAY';
+            container.appendChild(hall);
+
+            data.bottom.forEach((r, i) => container.appendChild(createRoomEl(r, i, ROWS.BOTTOM)));
+
+            // 階を切り替えた時、その階にいるキャラのみ表示
+            document.querySelectorAll('.wisp-container').forEach(el => {
+                el.style.display = (el.dataset.floor === floor) ? 'flex' : 'none';
+            });
+        }
+
+        function createRoomEl(room, col, rowType) {
+            const div = document.createElement('div');
+            div.className = 'room';
+            div.innerHTML = `<div class="room-name">${room.name}</div>`;
+            div.onclick = () => openListModal(room.id, room.name);
+            
+            const count = state.characters.filter(c => c.roomId === room.id).length;
+            if (count > 0) div.innerHTML += `<div class="char-count">◆ ${count}</div>`;
+            
+            // 座標計算用データ
+            div.dataset.id = room.id;
+            return div;
+        }
+
+        function changeFloor() {
+            renderMap();
+        }
+
+        // --- 4. キャラクターAI & 移動 ---
+        function createWispElement(char) {
+            const container = document.getElementById('map-container');
+            const el = document.createElement('div');
+            el.className = 'wisp-container';
+            el.id = 'wisp-' + char.id;
+            el.dataset.floor = char.floor;
+            el.innerHTML = `
+                <div class="wisp-name" style="color:${char.color}">${char.name}</div>
+                <div class="wisp" style="color:${char.color}; background:currentColor;"></div>
+            `;
+            
+            // 初期位置を教室に配置
+            const pos = getRoomCenter(char.roomId);
+            el.style.left = pos.x + 'px';
+            el.style.top = pos.y + 'px';
+            
+            document.querySelector('.map-wrapper').appendChild(el);
+            
+            // 知能を授ける
+            startCharacterAI(char.id);
+        }
+
+        function getRoomCenter(roomId) {
+            const mapRect = document.getElementById('map-container').getBoundingClientRect();
+            const roomEl = document.querySelector(`[data-id="${roomId}"]`);
+            if(!roomEl) return {x:0, y:0};
+            const roomRect = roomEl.getBoundingClientRect();
+            return {
+                x: (roomRect.left + roomRect.width / 2) - mapRect.left,
+                y: (roomRect.top + roomRect.height / 2) - mapRect.top
+            };
+        }
+
+        async function startCharacterAI(charId) {
+            const char = state.characters.find(c => c.id === charId);
+            if (!char) return;
+
+            while (state.characters.find(c => c.id === charId)) {
+                // 10〜20秒待機（教室に留まる）
+                await new Promise(r => setTimeout(r, 10000 + Math.random() * 10000));
+                
+                // 30%の確率で散歩に出る
+                if (Math.random() < 0.3) {
+                    const floor = char.floor;
+                    const rooms = [...state.floorData[floor].top, ...state.floorData[floor].bottom];
+                    const targetRoom = rooms[Math.floor(Math.random() * rooms.length)];
+                    
+                    await moveCharToRoom(charId, targetRoom.id);
+                }
+            }
+        }
+
+        async function moveCharToRoom(charId, targetRoomId) {
+            const el = document.getElementById('wisp-' + charId);
+            if (!el) return;
+
+            const char = state.characters.find(c => c.id === charId);
+            const startRoomId = char.currentLocation || char.roomId;
+            
+            // 経路作成: 1.現在の教室 -> 2.目の前の廊下 -> 3.目的地の廊下 -> 4.目的地の教室
+            const p1 = getRoomCenter(startRoomId);
+            const p4 = getRoomCenter(targetRoomId);
+            
+            // 廊下（高さ固定 140px付近）を経由
+            const hallY = 140; 
+            const path = [
+                { x: p1.x, y: hallY }, // 廊下に出る
+                { x: p4.x, y: hallY }, // 廊下を横移動
+                { x: p4.x, y: p4.y }  // 教室に入る
+            ];
+
+            for (let point of path) {
+                if (!el) break;
+                const currentLeft = parseFloat(el.style.left);
+                const currentTop = parseFloat(el.style.top);
+                const dist = Math.sqrt(Math.pow(point.x - currentLeft, 2) + Math.pow(point.y - currentTop, 2));
+                const duration = dist / WALK_SPEED;
+
+                el.style.transitionDuration = duration + 's';
+                el.style.left = point.x + 'px';
+                el.style.top = point.y + 'px';
+                
+                await new Promise(r => setTimeout(r, duration * 1000));
+            }
+            char.currentLocation = targetRoomId;
+        }
+
+        // --- 5. アクション ---
+        function addCharacter() {
+            const name = document.getElementById('add-name').value;
+            const roomId = document.getElementById('add-room').value;
+            const floor = document.getElementById('add-room').selectedOptions[0].dataset.floor;
+            if(!name) return;
+
+            const newChar = {
+                id: Date.now().toString(),
+                name: name,
+                roomId: roomId,
+                floor: floor,
+                color: document.getElementById('add-color').value,
+                info: document.getElementById('add-info').value
+            };
+
+            state.characters.push(newChar);
+            createWispElement(newChar);
+            saveAll();
+            renderMap();
+            closeModal('add-modal');
+        }
+
+        let selectedCharId = null;
+        function openListModal(roomId, roomName) {
+            const modal = document.getElementById('list-modal');
+            document.getElementById('list-title').innerText = roomName;
+            modal.dataset.targetRoomId = roomId;
+            
+            const container = document.getElementById('char-list-container');
+            container.innerHTML = '';
+            
+            const list = state.characters.filter(c => c.roomId === roomId);
+            if(list.length === 0) container.innerHTML = "誰もいないようだ...";
+            
+            list.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'char-item';
+                div.innerHTML = `<div style="width:10px; height:10px; border-radius:50%; background:${c.color}"></div>${c.name}`;
+                div.onclick = () => {
+                    selectedCharId = c.id;
+                    openDetail(c);
+                };
+                container.appendChild(div);
+            });
+            openModal('list-modal');
+        }
+
+        function openDetail(c) {
+            document.getElementById('det-name').innerText = c.name;
+            document.getElementById('det-name').style.color = c.color;
+            document.getElementById('det-room').innerText = c.floor + " / " + getRoomName(c.roomId);
+            document.getElementById('det-info').innerText = c.info;
+            openModal('detail-modal');
+        }
+
+        function deleteChar() {
+            if(!confirm("この存在を消去しますか？")) return;
+            state.characters = state.characters.filter(c => c.id !== selectedCharId);
+            const wisp = document.getElementById('wisp-' + selectedCharId);
+            if(wisp) wisp.remove();
+            saveAll();
+            renderMap();
+            closeModal('detail-modal');
+            closeModal('list-modal');
+        }
+
+        function renameRoom() {
+            const roomId = document.getElementById('list-modal').dataset.targetRoomId;
+            const oldName = document.getElementById('list-title').innerText;
+            const newName = prompt("教室名の変更:", oldName);
+            if(!newName) return;
+
+            for(let f in state.floorData) {
+                let r = [...state.floorData[f].top, ...state.floorData[f].bottom].find(x => x.id === roomId);
+                if(r) r.name = newName;
+            }
+            document.getElementById('list-title').innerText = newName;
+            saveAll();
+            renderMap();
+            updateRoomSelect();
+        }
+
+        // --- 6. ユーティリティ ---
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        
+        function getRoomName(id) {
+            for(let f in state.floorData) {
+                let r = [...state.floorData[f].top, ...state.floorData[f].bottom].find(x => x.id === id);
+                if(r) return r.name;
+            }
+            return "";
+        }
+
+        function updateRoomSelect() {
+            const select = document.getElementById('add-room');
+            select.innerHTML = '';
+            ['5F','4F','3F','2F','1F','B1'].forEach(f => {
+                const group = document.createElement('optgroup');
+                group.label = f;
+                [...state.floorData[f].top, ...state.floorData[f].bottom].forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.id;
+                    opt.innerText = r.name;
+                    opt.dataset.floor = f;
+                    group.appendChild(opt);
+                });
+                select.appendChild(group);
+            });
+        }
+
+        loadAll();
+    </script>
+</body>
+</html>
