@@ -8,9 +8,8 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body, html {
             width: 100%; 
-            height: 100%;
+            height: 100vh;
             background-color: #030406;
-            /* スクロールやバウンス（引っ張って更新など）を防止 */
             overflow: hidden;
             position: fixed;
             touch-action: none;
@@ -24,17 +23,21 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
+            background-color: #030406;
         }
         canvas {
-            /* Safariでドット絵をぼやけさせないための指定を網羅 */
+            display: block;
             image-rendering: -webkit-optimize-contrast;
             image-rendering: -webkit-crisp-edges;
             image-rendering: crisp-edges;
             image-rendering: pixelated;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
         }
         #ui-container {
-            position: absolute;
-            /* iPhoneのホームバー（下部の線）に被らないように安全領域を確保 */
+            position: fixed;
             bottom: calc(env(safe-area-inset-bottom, 20px) + 30px);
             left: 0;
             width: 100%;
@@ -50,16 +53,17 @@
             -webkit-backdrop-filter: blur(8px);
             color: #fff;
             border: 1px solid rgba(255, 255, 255, 0.4);
-            padding: 14px 28px;
-            font-size: 15px;
+            padding: 12px 24px;
+            font-size: 14px;
             font-weight: bold;
-            letter-spacing: 2px;
-            border-radius: 30px;
+            letter-spacing: 1px;
+            border-radius: 25px;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            /* タップ時のハイライトを消す */
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
         }
         #toggle-btn:active {
             transform: scale(0.95);
@@ -78,7 +82,7 @@
 
 <script>
     const canvas = document.getElementById('screen');
-    const ctx = canvas.getContext('2d', { alpha: false }); // 軽量化のため透過オフ
+    const ctx = canvas.getContext('2d', { alpha: false });
     
     // ドット絵の内部解像度（縦長）
     const W = 144;
@@ -86,18 +90,32 @@
     canvas.width = W;
     canvas.height = H;
     
-    // Safariでのアンチエイリアス（ぼやけ）をJS側でも無効化
     ctx.imageSmoothingEnabled = false;
 
-    // 画面サイズに合わせてCanvasをCSSのtransformで拡大する関数
-    // object-fitの代わりにこれを使うことでSafariでのぼやけやレイアウト崩れを防ぎます
+    // スマホ対応のリサイズ処理
     function resizeCanvas() {
-        const scaleX = window.innerWidth / W;
-        const scaleY = window.innerHeight / H;
-        const scale = Math.max(scaleX, scaleY); // 画面全体を覆うように拡大（cover相当）
-        canvas.style.transform = `scale(${scale})`;
+        const container = document.getElementById('canvas-container');
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        
+        const scaleX = containerWidth / W;
+        const scaleY = containerHeight / H;
+        const scale = Math.floor(Math.min(scaleX, scaleY)); // スマホでは整数倍にして清潔に
+        
+        const finalWidth = W * scale;
+        const finalHeight = H * scale;
+        
+        canvas.style.width = finalWidth + 'px';
+        canvas.style.height = finalHeight + 'px';
     }
+    
     window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(resizeCanvas, 100);
+    });
+    
+    // 初期化
+    setTimeout(resizeCanvas, 100);
     resizeCanvas();
 
     // 状態管理
@@ -135,7 +153,7 @@
 
     function draw() {
         time++;
-        transition += (targetTransition - transition) * 0.04; // 滑らかな切り替え
+        transition += (targetTransition - transition) * 0.04;
 
         // 1. 背景の空
         let skyR = lerp(8, 255, transition);
@@ -205,13 +223,12 @@
             ctx.fillStyle = lColor(25, 35, 50, 160, 190, 200, transition);
             ctx.fillRect(g.x, g.y, g.w, g.h);
             
-            // ガラスのキラキラ反射
             let shine = Math.pow(Math.sin(time * 0.04 + g.x), 8); 
             ctx.fillStyle = `rgba(255, 255, 255, ${shine * 0.8})`;
             ctx.fillRect(g.x + 2, g.y + 2, 2, 4);
         });
 
-        // 7. 光の演出 (合成モードの相性問題を避けるため、標準描画で光を重ねる)
+        // 7. 光の演出
         if (transition > 0.01) {
             let dayLight = ctx.createRadialGradient(W/2, 80, 10, W/2, 100, 140);
             dayLight.addColorStop(0, `rgba(255, 245, 200, ${0.4 * transition})`);
@@ -228,7 +245,6 @@
             ctx.fillStyle = nightLight;
             ctx.fillRect(0, 0, W, H);
             
-            // 夜の埃
             for(let i=0; i<8; i++) {
                 let px = Math.floor((Math.sin(time * 0.01 + i * 10) * 100 + 100)) % W;
                 let py = Math.floor(time * 0.2 + i * 30) % H;
