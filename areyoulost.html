@@ -603,8 +603,8 @@ function openChar(id){
       <div class="detail-hero">
         <div class="detail-av" style="background:${ch.color}18;border:1px solid ${ch.color}44;"><span style="color:${ch.color}">${ch.name.charAt(0)}</span></div>
         <div class="detail-name">${esc(ch.name)}</div>
-        <div class="detail-loc">${fp.name} — ${rn}</div>
-        ${ch.personality?`<span class="ptag" style="color:${pi.color};border-color:${pi.color}55;background:${pi.color}14">${pi.label} — ${pi.desc}</span>`:''}
+        <div class="detail-loc">${fp.name} -- ${rn}</div>
+        ${ch.personality?`<span class="ptag" style="color:${pi.color};border-color:${pi.color}55;background:${pi.color}14">${pi.label} -- ${pi.desc}</span>`:''}
       </div>
       <div class="detail-row"><div class="detail-lbl">名前</div><div class="detail-val">${esc(ch.name)}</div></div>
       <div class="detail-row"><div class="detail-lbl">所属</div><div class="detail-val">${fp.name} ${rn}</div></div>
@@ -646,7 +646,7 @@ function buildModalPersonalities(){
 
 function initModal(){
   const fs=document.getElementById('iFloor');
-  fs.innerHTML=FLOOR_ORDER.map(fid=>`<option value="${fid}">${FLOOR_PLANS[fid].label} — ${FLOOR_PLANS[fid].name}</option>`).join('');
+  fs.innerHTML=FLOOR_ORDER.map(fid=>`<option value="${fid}">${FLOOR_PLANS[fid].label} -- ${FLOOR_PLANS[fid].name}</option>`).join('');
   fs.value=ST.floor;fs.addEventListener('change',updateRoomSel);updateRoomSel();
 
   document.getElementById('swatches').innerHTML=COLORS.map((c,i)=>

@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Scholarium — 学校の創作マップ</title>
+<title>Scholarium -- 学校の創作マップ</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1158,7 +1158,7 @@ function openChar(id) {
           <span style="color:${ch.color}">${ch.name.charAt(0)}</span>
         </div>
         <div class="detail-name-lg">${esc(ch.name)}</div>
-        <div class="detail-loc">${floor.name} — ${room.name}</div>
+        <div class="detail-loc">${floor.name} -- ${room.name}</div>
       </div>
       <div class="detail-row">
         <div class="detail-label">名前</div>
@@ -1197,7 +1197,7 @@ function deleteChar(id) {
 function initModal() {
   // Floor select
   const fs = document.getElementById('iFloor');
-  fs.innerHTML = FLOORS.map(f => `<option value="${f.id}">${f.label} — ${f.name}</option>`).join('');
+  fs.innerHTML = FLOORS.map(f => `<option value="${f.id}">${f.label} -- ${f.name}</option>`).join('');
   fs.value = st.floor;
   fs.addEventListener('change', updateRoomSelect);
   updateRoomSelect();

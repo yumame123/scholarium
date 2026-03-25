@@ -823,7 +823,7 @@ function openRoom(fid,rid){
 
 function openStaffRoom(fid){
   currentRoomCtx={fid,rid:STAFF_ID};
-  document.getElementById('rPTitle').textContent=getRoomName(fid,STAFF_ID)+' — 全キャラクタ--一覧';
+  document.getElementById('rPTitle').textContent=getRoomName(fid,STAFF_ID)+' -- 全キャラクタ--一覧';
   document.getElementById('rPMeta').textContent=`合計 ${ST.chars.length}人`;
   document.getElementById('rPRenameArea').classList.remove('open');
   document.getElementById('renameBtn').style.display='none';
@@ -879,7 +879,7 @@ function openChar(id){
       <div class="detail-hero">
         <div class="detail-av" style="background:${ch.color}18;border:1px solid ${ch.color}44;"><span style="color:${ch.color}">${ch.name.charAt(0)}</span></div>
         <div class="detail-name">${esc(ch.name)}</div>
-        <div class="detail-loc">${fp.name} — ${rn}</div>
+        <div class="detail-loc">${fp.name} -- ${rn}</div>
         <div class="detail-tags">
           <span class="mental-badge" style="color:${ml.color};border-color:${ml.color}55;background:${ml.color}14">メンタル：${ml.label}</span>
           ${ch.personality?`<span class="ptag" style="color:${pi.color};border-color:${pi.color}55;background:${pi.color}14">${pi.label}</span>`:''}
@@ -922,7 +922,7 @@ function buildPersonalityRadios(selected){
 
 function initModal(){
   const fs=document.getElementById('iFloor');
-  fs.innerHTML=FLOOR_ORDER.map(fid=>`<option value="${fid}">${FLOOR_PLANS[fid].label} — ${FLOOR_PLANS[fid].name}</option>`).join('');
+  fs.innerHTML=FLOOR_ORDER.map(fid=>`<option value="${fid}">${FLOOR_PLANS[fid].label} -- ${FLOOR_PLANS[fid].name}</option>`).join('');
   fs.value=ST.floor;fs.addEventListener('change',updateRoomSel);updateRoomSel();
   document.getElementById('swatches').innerHTML=COLORS.map((c,i)=>`<div class="swatch${i===0?' sel':''}" style="background:${c}" onclick="pickColor('${c}',this)"></div>`).join('');
   buildPersonalityRadios('');

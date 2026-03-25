@@ -995,7 +995,7 @@ function openChar(id) {
           <span style="color:${ch.color}">${ch.name.charAt(0)}</span>
         </div>
         <div class="detail-name">${esc(ch.name)}</div>
-        <div class="detail-loc">${fp.name} — ${room.name.replace('\n','')}</div>
+        <div class="detail-loc">${fp.name} -- ${room.name.replace('\n','')}</div>
       </div>
       <div class="detail-row"><div class="detail-lbl">名前</div><div class="detail-val">${esc(ch.name)}</div></div>
       <div class="detail-row"><div class="detail-lbl">所属</div><div class="detail-val">${fp.name} ${room.name.replace('\n','')}</div></div>
@@ -1023,7 +1023,7 @@ function initModal() {
   const fs = document.getElementById('iFloor');
   fs.innerHTML = FLOOR_ORDER.map(fid=>{
     const fp=FLOOR_PLANS[fid];
-    return `<option value="${fid}">${fp.label} — ${fp.name}</option>`;
+    return `<option value="${fid}">${fp.label} -- ${fp.name}</option>`;
   }).join('');
   fs.value = ST.floor;
   fs.addEventListener('change',updateRoomSel);
