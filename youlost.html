@@ -177,7 +177,7 @@ header{padding:16px 18px 10px;border-bottom:1px solid rgba(80,110,200,0.15);back
 <canvas class="stars-canvas" id="starsCanvas"></canvas>
 <div class="app">
   <header>
-    <div><div class="h-title">Scholarium</div><div class="h-sub">創作キャラクターマップ</div></div>
+    <div><div class="h-title">Scholarium</div><div class="h-sub">創作キャラクタ--マップ</div></div>
     <div class="h-count" id="hCount"><span>0</span>人</div>
   </header>
   <div class="floor-tabs" id="floorTabs"></div>
@@ -217,7 +217,7 @@ header{padding:16px 18px 10px;border-bottom:1px solid rgba(80,110,200,0.15);back
 <div class="modal" id="addModal">
   <div class="modal-handle"></div>
   <div class="modal-top">
-    <div class="modal-title" id="modalTitle">キャラクターを追加</div>
+    <div class="modal-title" id="modalTitle">キャラクタ--を追加</div>
     <button class="btn-modal-close" onclick="closeModal()">✕</button>
   </div>
   <div class="fg"><label class="fl">名前</label><input class="fi" id="iName" type="text" placeholder="名前を入力..." autocomplete="off"></div>
@@ -225,7 +225,7 @@ header{padding:16px 18px 10px;border-bottom:1px solid rgba(80,110,200,0.15);back
   <div class="fg"><label class="fl">クラス / 部屋</label><select class="fs" id="iRoom"></select></div>
   <div class="fg"><label class="fl">その他情報</label><textarea class="ft" id="iInfo" placeholder="性格、特徴、関係性など..."></textarea></div>
   <div class="fg"><label class="fl">性格</label><div class="ptag-radios" id="ptRadios"></div></div>
-  <div class="fg"><label class="fl">カラー</label><div class="swatches" id="swatches"></div></div>
+  <div class="fg"><label class="fl">カラ--</label><div class="swatches" id="swatches"></div></div>
   <button class="btn-sub" id="subBtn">追加する</button>
 </div>
 
@@ -267,7 +267,7 @@ const FLOOR_PLANS={
     {id:'locker_f',  name:'更衣室（女）',  x:157,y:41, w:68, h:39},
     {id:'equipment', name:'器具室',        x:227,y:2,  w:67, h:78},
     {id:'machine',   name:'機械室',        x:2,  y:106,w:145,h:90},
-    {id:'pool',      name:'プール倉庫',    x:149,y:106,w:145,h:90},
+    {id:'pool',      name:'プ--ル倉庫',    x:149,y:106,w:145,h:90},
   ],windows:{top:[{x:20},{x:60},{x:100},{x:240},{x:270}],bot:[{x:30},{x:100},{x:200},{x:260}]}},
   '1f':{label:'1F',name:'1階',rooms:[
     {id:'1a',     name:'1年A組', x:2,  y:2,  w:70, h:78},
@@ -296,10 +296,10 @@ const FLOOR_PLANS={
     {id:'sewing', name:'被服室',  x:198,y:106,w:96, h:90},
   ],windows:{top:[{x:30},{x:140},{x:240}],bot:[{x:40},{x:150},{x:250}]}},
   '4f':{label:'4F',name:'4階',rooms:[
-    {id:'hall',           name:'多目的\nホール', x:2,  y:2,  w:146,h:78, large:true},
+    {id:'hall',           name:'多目的\nホ--ル', x:2,  y:2,  w:146,h:78, large:true},
     {id:'av',             name:'視聴覚室',       x:150,y:2,  w:72, h:78},
     {id:'broadcast',      name:'放送室',         x:224,y:2,  w:70, h:78},
-    {id:'pc',             name:'コンピュータ室', x:2,  y:106,w:108,h:90},
+    {id:'pc',             name:'コンピュ--タ室', x:2,  y:106,w:108,h:90},
     {id:'student_council',name:'生徒会室',       x:112,y:106,w:80, h:90},
     {id:'counseling',     name:'相談室',         x:194,y:106,w:100,h:90},
   ],windows:{top:[{x:50},{x:200},{x:260}],bot:[{x:40},{x:150},{x:245}]}},
@@ -816,21 +816,21 @@ function openRoom(fid,rid){
 
   const body=document.getElementById('rPBody');
   body.innerHTML=chars.length===0
-    ?`<div class="empty-st"><div class="empty-ic">🪟</div><div class="empty-tx">まだキャラクターがいません<br>＋ボタンから追加できます</div></div>`
+    ?`<div class="empty-st"><div class="empty-ic">🪟</div><div class="empty-tx">まだキャラクタ--がいません<br>＋ボタンから追加できます</div></div>`
     :chars.map(ch=>charItemHTML(ch,false)).join('');
   showPanel('roomPanel');
 }
 
 function openStaffRoom(fid){
   currentRoomCtx={fid,rid:STAFF_ID};
-  document.getElementById('rPTitle').textContent=getRoomName(fid,STAFF_ID)+' — 全キャラクター一覧';
+  document.getElementById('rPTitle').textContent=getRoomName(fid,STAFF_ID)+' — 全キャラクタ--一覧';
   document.getElementById('rPMeta').textContent=`合計 ${ST.chars.length}人`;
   document.getElementById('rPRenameArea').classList.remove('open');
   document.getElementById('renameBtn').style.display='none';
 
   const body=document.getElementById('rPBody');
   if(!ST.chars.length){
-    body.innerHTML=`<div class="empty-st"><div class="empty-ic">📋</div><div class="empty-tx">キャラクターがまだいません</div></div>`;
+    body.innerHTML=`<div class="empty-st"><div class="empty-ic">📋</div><div class="empty-tx">キャラクタ--がまだいません</div></div>`;
   } else {
     // Group by floor
     let html='';
@@ -946,7 +946,7 @@ function pickColor(c,el2){
 
 function openModal(){
   editCharId=null;
-  document.getElementById('modalTitle').textContent='キャラクターを追加';
+  document.getElementById('modalTitle').textContent='キャラクタ--を追加';
   document.getElementById('subBtn').textContent='追加する';
   document.getElementById('iName').value='';
   document.getElementById('iFloor').value=ST.floor;
@@ -963,7 +963,7 @@ function openModal(){
 function openEditModal(id){
   const ch=ST.chars.find(c=>c.id===id); if(!ch)return;
   editCharId=id;
-  document.getElementById('modalTitle').textContent='キャラクターを編集';
+  document.getElementById('modalTitle').textContent='キャラクタ--を編集';
   document.getElementById('subBtn').textContent='保存する';
   document.getElementById('iName').value=ch.name;
   document.getElementById('iFloor').value=ch.floor;

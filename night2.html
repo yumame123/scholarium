@@ -254,7 +254,7 @@
             <input type="text" id="add-name" placeholder="名前">
             <select id="add-room"></select>
             <div style="display:flex; gap:5px; margin: 10px 0;">
-                <label>オーラの色:</label>
+                <label>オ--ラの色:</label>
                 <input type="color" id="add-color" value="#c2a878" style="padding:0; height:30px; width:60px;">
             </div>
             <textarea id="add-info" placeholder="詳細設定..."></textarea>
@@ -283,7 +283,7 @@
     </div>
 
     <script>
-        // --- 1. 定数と初期データ ---
+        // --- 1. 定数と初期デ--タ ---
         const WALK_SPEED = 80; // px/sec
         const ROWS = { TOP: 0, HALL: 1, BOTTOM: 2 };
         
@@ -304,7 +304,7 @@
             ]
         });
 
-        // --- 2. データ管理 (保存・読込) ---
+        // --- 2. デ--タ管理 (保存・読込) ---
         function saveAll() {
             state.schoolName = document.getElementById('school-name').innerText;
             localStorage.setItem('school_mapper_save', JSON.stringify(state));
@@ -322,7 +322,7 @@
             }
             updateRoomSelect();
             renderMap();
-            // キャラクター表示の初期化
+            // キャラクタ--表示の初期化
             state.characters.forEach(c => createWispElement(c));
         }
 
@@ -361,7 +361,7 @@
             const count = state.characters.filter(c => c.roomId === room.id).length;
             if (count > 0) div.innerHTML += `<div class="char-count">◆ ${count}</div>`;
             
-            // 座標計算用データ
+            // 座標計算用デ--タ
             div.dataset.id = room.id;
             return div;
         }
@@ -370,7 +370,7 @@
             renderMap();
         }
 
-        // --- 4. キャラクターAI & 移動 ---
+        // --- 4. キャラクタ--AI & 移動 ---
         function createWispElement(char) {
             const container = document.getElementById('map-container');
             const el = document.createElement('div');
@@ -541,7 +541,7 @@
             updateRoomSelect();
         }
 
-        // --- 6. ユーティリティ ---
+        // --- 6. ユ--ティリティ ---
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
         

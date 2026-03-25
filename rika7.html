@@ -10,7 +10,7 @@
             width: 100%; 
             height: 100%;
             background-color: #030406;
-            /* スクロールやバウンス（引っ張って更新など）を防止 */
+            /* スクロ--ルやバウンス（引っ張って更新など）を防止 */
             overflow: hidden;
             position: fixed;
             touch-action: none;
@@ -34,7 +34,7 @@
         }
         #ui-container {
             position: absolute;
-            /* iPhoneのホームバー（下部の線）に被らないように安全領域を確保 */
+            /* iPhoneのホ--ムバ--（下部の線）に被らないように安全領域を確保 */
             bottom: 20px;
             left: 0;
             width: 100%;
@@ -73,7 +73,7 @@
     <canvas id="screen"></canvas>
 </div>
 <div id="ui-container">
-    <button id="toggle-btn">夜モードへ</button>
+    <button id="toggle-btn">夜モ--ドへ</button>
 </div>
 
 <script>
@@ -115,7 +115,7 @@
         return `rgb(${Math.floor(lerp(r1, r2, t))}, ${Math.floor(lerp(g1, g2, t))}, ${Math.floor(lerp(b1, b2, t))})`;
     }
 
-    // 備品データ (cd=昼の色, cn=夜の色)
+    // 備品デ--タ (cd=昼の色, cn=夜の色)
     const clutter = [
         {x: 0, y: 150, w: 28, h: 106, cd: [110,95,80], cn: [12,15,20]}, 
         {x: 0, y: 120, w: 22, h: 30, cd: [130,110,85], cn: [10,12,16]}, 
@@ -189,7 +189,7 @@
             ctx.fillRect(c.x, c.y, c.w, c.h);
         });
 
-        // 5. カーテン
+        // 5. カ--テン
         ctx.fillStyle = lColor(12, 16, 24, 230, 220, 210, transition);
         for(let y = 32; y < 148; y++) {
             let wind = Math.floor(Math.sin(time * 0.02 + y * 0.05) * (y / 150) * 5);
@@ -211,7 +211,7 @@
             ctx.fillRect(g.x + 2, g.y + 2, 2, 4);
         });
 
-        // 7. 光の演出 (合成モードの相性問題を避けるため、標準描画で光を重ねる)
+        // 7. 光の演出 (合成モ--ドの相性問題を避けるため、標準描画で光を重ねる)
         if (transition > 0.01) {
             let dayLight = ctx.createRadialGradient(W/2, 80, 10, W/2, 100, 140);
             dayLight.addColorStop(0, `rgba(255, 245, 200, ${0.4 * transition})`);
@@ -240,12 +240,12 @@
         requestAnimationFrame(draw);
     }
 
-    // モード切替
+    // モ--ド切替
     const btn = document.getElementById('toggle-btn');
     btn.addEventListener('click', () => {
         isDay = !isDay;
         targetTransition = isDay ? 1.0 : 0.0;
-        btn.textContent = isDay ? "夜モードへ" : "昼モードへ";
+        btn.textContent = isDay ? "夜モ--ドへ" : "昼モ--ドへ";
         
         if(isDay) {
             btn.style.background = "rgba(255, 255, 255, 0.15)";

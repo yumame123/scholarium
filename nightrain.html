@@ -90,7 +90,7 @@
         .map-wrapper {
             flex: 1;
             position: relative;
-            overflow: auto; /* スマホではスクロール可能に */
+            overflow: auto; /* スマホではスクロ--ル可能に */
             padding: 20px;
             display: flex;
             justify-content: center;
@@ -433,7 +433,7 @@
                 <select id="char-room"></select>
             </div>
             <div class="form-group">
-                <label>魂の色 (オーラ)</label>
+                <label>魂の色 (オ--ラ)</label>
                 <div class="color-options">
                     <label><input type="radio" name="char-color" value="#c2a878" class="color-radio" checked><div class="color-label" style="background:#c2a878; color:#c2a878;"></div></label>
                     <label><input type="radio" name="char-color" value="#789bc2" class="color-radio"><div class="color-label" style="background:#789bc2; color:#789bc2;"></div></label>
@@ -475,8 +475,8 @@
     </div>
 
     <script>
-        // --- データ定義 (レイアウトを上下段に分割し、6マス単位で管理) ---
-        // null は空きスペース（廊下や階段等の表現用）
+        // --- デ--タ定義 (レイアウトを上下段に分割し、6マス単位で管理) ---
+        // null は空きスペ--ス（廊下や階段等の表現用）
         const floorData = {
             '5F': { 
                 top: [{ id: 'roof', name: '屋上', type: 'special' }, null, null, null, null, null], 
@@ -496,10 +496,10 @@
             },
             '1F': {
                 top: [{ id: '1-1', name: '一年1組' }, { id: '1-2', name: '一年2組' }, { id: '1-3', name: '一年3組' }, { id: '1-4', name: '一年4組' }, { id: '1-5', name: '一年5組' }, { id: '1-6', name: '一年6組' }],
-                bottom: [{ id: 'entrance', name: '玄関ホール', type: 'special' }, { id: 'office', name: '事務室' }, { id: 'staff', name: '職員室' }, { id: 'principal', name: '校長室' }, { id: 'nurse', name: '保健室' }, null]
+                bottom: [{ id: 'entrance', name: '玄関ホ--ル', type: 'special' }, { id: 'office', name: '事務室' }, { id: 'staff', name: '職員室' }, { id: 'principal', name: '校長室' }, { id: 'nurse', name: '保健室' }, null]
             },
             'B1': {
-                top: [null, null, { id: 'storage', name: '地下倉庫', type: 'special' }, { id: 'boiler', name: 'ボイラー室' }, null, null],
+                top: [null, null, { id: 'storage', name: '地下倉庫', type: 'special' }, { id: 'boiler', name: 'ボイラ--室' }, null, null],
                 bottom: [null, null, null, null, null, null]
             }
         };
@@ -521,7 +521,7 @@
             renderMap();
         });
 
-        // --- 学校名の保存処理 (Enterキーでフォーカスを外す) ---
+        // --- 学校名の保存処理 (Enterキ--でフォ--カスを外す) ---
         document.getElementById('school-name').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -570,7 +570,7 @@
             return el;
         }
 
-        // --- フォームのセレクトボックス初期化 ---
+        // --- フォ--ムのセレクトボックス初期化 ---
         function initRoomSelectOptions() {
             const select = document.getElementById('char-room');
             select.innerHTML = '';
@@ -598,7 +598,7 @@
             
             const newName = prompt('新しい教室名を入力してください:', currentRoomIdForModal.name);
             if (newName && newName.trim() !== '') {
-                // データを更新
+                // デ--タを更新
                 const allFloors = Object.keys(floorData);
                 for (let floor of allFloors) {
                     const topRoom = floorData[floor].top.find(r => r && r.id === currentRoomIdForModal.id);
@@ -616,7 +616,7 @@
             }
         }
 
-        // --- キャラクターの追加 ---
+        // --- キャラクタ--の追加 ---
         function addCharacter() {
             const nameInput = document.getElementById('char-name').value.trim();
             const roomSelect = document.getElementById('char-room');
@@ -648,7 +648,7 @@
             renderMap();
         }
 
-        // --- キャラクターの削除 ---
+        // --- キャラクタ--の削除 ---
         function deleteCharacter() {
             if (!currentEditingCharId) return;
             
@@ -663,7 +663,7 @@
             }
         }
 
-        // --- モーダル制御 ---
+        // --- モ--ダル制御 ---
         function openModal(id) {
             document.getElementById(id).classList.add('active');
         }
@@ -672,7 +672,7 @@
             document.getElementById(id).classList.remove('active');
         }
 
-        // 現在の部屋名を最新のデータから取得する補助関数
+        // 現在の部屋名を最新のデ--タから取得する補助関数
         function getRoomNameById(roomId) {
             for (let floor of Object.keys(floorData)) {
                 const room = [...floorData[floor].top, ...floorData[floor].bottom].find(r => r && r.id === roomId);
@@ -726,7 +726,7 @@
             }
         }
 
-        // --- アニメーション（名前付きの光の玉） ---
+        // --- アニメ--ション（名前付きの光の玉） ---
         function renderWisps() {
             const container = document.getElementById('map-container');
             document.querySelectorAll('.wisp-container').forEach(w => w.remove());

@@ -372,7 +372,7 @@
     </div>
 
     <script>
-        // --- データ定義 ---
+        // --- デ--タ定義 ---
         // 各階の部屋構成（画像の雰囲気を再現）
         const floorData = {
             '5F': [{ id: 'roof', name: '屋上', type: 'special' }],
@@ -391,15 +391,15 @@
             '1F': [
                 { id: '1-1', name: '1年1組' }, { id: '1-2', name: '1年2組' }, { id: '1-3', name: '1年3組' },
                 { id: '1-4', name: '1年4組' }, { id: '1-5', name: '1年5組' }, { id: '1-6', name: '1年6組' },
-                { id: 'entrance', name: '玄関ホール', type: 'special' }, { id: 'office', name: '事務室' }, { id: 'staff', name: '職員室' },
+                { id: 'entrance', name: '玄関ホ--ル', type: 'special' }, { id: 'office', name: '事務室' }, { id: 'staff', name: '職員室' },
                 { id: 'principal', name: '校長室' }, { id: 'nurse', name: '保健室' }
             ],
             'B1': [
-                { id: 'storage', name: '地下倉庫', type: 'special' }, { id: 'boiler', name: 'ボイラー室' }
+                { id: 'storage', name: '地下倉庫', type: 'special' }, { id: 'boiler', name: 'ボイラ--室' }
             ]
         };
 
-        // キャラクターデータ保存用配列
+        // キャラクタ--デ--タ保存用配列
         let characters = [];
         let currentFloor = '1F';
         let currentRoomIdForModal = null; // 戻るボタン用の記憶
@@ -455,7 +455,7 @@
             return el;
         }
 
-        // --- フォームのセレクトボックス初期化 ---
+        // --- フォ--ムのセレクトボックス初期化 ---
         function initRoomSelectOptions() {
             const select = document.getElementById('char-room');
             select.innerHTML = '';
@@ -474,7 +474,7 @@
             });
         }
 
-        // --- キャラクターの追加 ---
+        // --- キャラクタ--の追加 ---
         function addCharacter() {
             const nameInput = document.getElementById('char-name').value.trim();
             const roomSelect = document.getElementById('char-room');
@@ -498,7 +498,7 @@
 
             characters.push(newChar);
             
-            // フォームリセット
+            // フォ--ムリセット
             document.getElementById('char-name').value = '';
             document.getElementById('char-info').value = '';
             
@@ -506,7 +506,7 @@
             renderMap(); // 人数更新とWisp再生成のため
         }
 
-        // --- モーダル制御 ---
+        // --- モ--ダル制御 ---
         function openModal(id) {
             document.getElementById(id).classList.add('active');
         }
@@ -540,7 +540,7 @@
         }
 
         function openDetailModal(char) {
-            closeModal('room-modal'); // 裏のモーダルを閉じる
+            closeModal('room-modal'); // 裏のモ--ダルを閉じる
             
             document.getElementById('detail-name').innerText = char.name;
             document.getElementById('detail-class').innerText = `[${char.floor}] ${char.roomName}`;
@@ -556,14 +556,14 @@
             }
         }
 
-        // --- アニメーション（徘徊する魂/キャラクター） ---
+        // --- アニメ--ション（徘徊する魂/キャラクタ--） ---
         // ※邪魔にならないよう、光の玉（Wisp）として表現し、マップ全体をゆっくり漂わせます。
         function renderWisps() {
             const container = document.getElementById('map-container');
             // 既存のWispを削除
             document.querySelectorAll('.wisp').forEach(w => w.remove());
 
-            // 現在のフロアにいるキャラクターの数だけWispを生成
+            // 現在のフロアにいるキャラクタ--の数だけWispを生成
             const charsOnFloor = characters.filter(c => c.floor === currentFloor);
             
             charsOnFloor.forEach(char => {

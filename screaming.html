@@ -760,7 +760,7 @@ to { opacity: 1; transform: translateY(0); }
   <header>
     <div class="header-left">
       <div class="header-title">Scholarium</div>
-      <div class="header-subtitle">創作キャラクターマップ</div>
+      <div class="header-subtitle">創作キャラクタ--マップ</div>
     </div>
     <div class="header-count" id="headerCount">
       <span>0</span>人
@@ -778,7 +778,7 @@ to { opacity: 1; transform: translateY(0); }
 
 <!-- FAB -->
 
-<button class="fab" id="fabBtn" title="キャラクターを追加">＋</button>
+<button class="fab" id="fabBtn" title="キャラクタ--を追加">＋</button>
 
 <!-- Room/Char overlay -->
 
@@ -812,7 +812,7 @@ to { opacity: 1; transform: translateY(0); }
 
 <div class="modal" id="addModal">
   <div class="modal-handle"></div>
-  <div class="modal-title">キャラクターを追加</div>
+  <div class="modal-title">キャラクタ--を追加</div>
 
   <div class="form-group">
     <label class="form-label" for="iName">名前</label>
@@ -835,7 +835,7 @@ to { opacity: 1; transform: translateY(0); }
   </div>
 
   <div class="form-group">
-    <label class="form-label">カラー</label>
+    <label class="form-label">カラ--</label>
     <div class="color-swatches" id="colorSwatches"></div>
   </div>
 
@@ -856,7 +856,7 @@ const FLOORS = [
       { id: 'locker_f',  name: '更衣室（女）' },
       { id: 'equipment', name: '器具室' },
       { id: 'machine',   name: '機械室' },
-      { id: 'pool',      name: 'プール倉庫' },
+      { id: 'pool',      name: 'プ--ル倉庫' },
     ]
   },
   {
@@ -897,9 +897,9 @@ const FLOORS = [
   {
     id: '4f', label: '4F', name: '4階',
     rooms: [
-      { id: 'hall',           name: '多目的ホール', large: true },
+      { id: 'hall',           name: '多目的ホ--ル', large: true },
       { id: 'av',             name: '視聴覚室' },
-      { id: 'pc',             name: 'コンピュータ室' },
+      { id: 'pc',             name: 'コンピュ--タ室' },
       { id: 'student_council',name: '生徒会室' },
       { id: 'broadcast',      name: '放送室' },
       { id: 'counseling',     name: 'カウンセリング室' },
@@ -1124,7 +1124,7 @@ function openRoom(floorId, roomId) {
     body.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">🪟</div>
-        <div class="empty-text">まだキャラクターがいません<br>＋ボタンから追加できます</div>
+        <div class="empty-text">まだキャラクタ--がいません<br>＋ボタンから追加できます</div>
       </div>`;
   } else {
     body.innerHTML = chars.map(ch => `
@@ -1175,7 +1175,7 @@ function openChar(id) {
         <div class="detail-label">その他情報</div>
         <div class="detail-value">${esc(ch.info)}</div>
       </div>` : ''}
-      <button class="btn-delete" onclick="deleteChar('${ch.id}')">このキャラクターを削除</button>
+      <button class="btn-delete" onclick="deleteChar('${ch.id}')">このキャラクタ--を削除</button>
     </div>`;
 
   showPanel('charPanel');

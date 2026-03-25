@@ -389,7 +389,7 @@ letter-spacing:.05em;cursor:pointer;transition:opacity .2s,transform .15s
   <header>
     <div>
       <div class="h-title">Scholarium</div>
-      <div class="h-sub">創作キャラクターマップ</div>
+      <div class="h-sub">創作キャラクタ--マップ</div>
     </div>
     <div class="h-count" id="hCount"><span>0</span>人</div>
   </header>
@@ -420,12 +420,12 @@ letter-spacing:.05em;cursor:pointer;transition:opacity .2s,transform .15s
 <div class="modal-ov" id="modalOv"></div>
 <div class="modal" id="addModal">
   <div class="modal-handle"></div>
-  <div class="modal-title">キャラクターを追加</div>
+  <div class="modal-title">キャラクタ--を追加</div>
   <div class="fg"><label class="fl">名前</label><input class="fi" id="iName" type="text" placeholder="名前を入力..." autocomplete="off"></div>
   <div class="fg"><label class="fl">フロア</label><select class="fs" id="iFloor"></select></div>
   <div class="fg"><label class="fl">クラス / 部屋</label><select class="fs" id="iRoom"></select></div>
   <div class="fg"><label class="fl">その他情報</label><textarea class="ft" id="iInfo" placeholder="性格、特徴、関係性など..."></textarea></div>
-  <div class="fg"><label class="fl">カラー</label><div class="swatches" id="swatches"></div></div>
+  <div class="fg"><label class="fl">カラ--</label><div class="swatches" id="swatches"></div></div>
   <button class="btn-sub" id="subBtn">追加する</button>
 </div>
 
@@ -452,7 +452,7 @@ const FLOOR_PLANS = {
       {id:'equipment', name:'器具室',       x:227,y:2,  w:67,  h:78},
       // BOTTOM ROW (y=106, h=90)
       {id:'machine',   name:'機械室',       x:2,  y:106,w:145, h:90},
-      {id:'pool',      name:'プール倉庫',   x:149,y:106,w:145, h:90},
+      {id:'pool',      name:'プ--ル倉庫',   x:149,y:106,w:145, h:90},
     ],
     windows:{
       top:[{x:20,y:0},{x:60,y:0},{x:100,y:0},{x:240,y:0},{x:270,y:0}],
@@ -511,10 +511,10 @@ const FLOOR_PLANS = {
   '4f': {
     label:'4F', name:'4階',
     rooms:[
-      {id:'hall',           name:'多目的\nホール',  x:2,  y:2,  w:146, h:78, large:true},
+      {id:'hall',           name:'多目的\nホ--ル',  x:2,  y:2,  w:146, h:78, large:true},
       {id:'av',             name:'視聴覚室',        x:150,y:2,  w:72,  h:78},
       {id:'broadcast',      name:'放送室',          x:224,y:2,  w:70,  h:78},
-      {id:'pc',             name:'コンピュータ室',  x:2,  y:106,w:108, h:90},
+      {id:'pc',             name:'コンピュ--タ室',  x:2,  y:106,w:108, h:90},
       {id:'student_council',name:'生徒会室',        x:112,y:106,w:80,  h:90},
       {id:'counseling',     name:'相談室',          x:194,y:106,w:100, h:90},
     ],
@@ -961,7 +961,7 @@ function openRoom(floorId, roomId) {
 
   const body = document.getElementById('rPBody');
   if(chars.length===0){
-    body.innerHTML=`<div class="empty-st"><div class="empty-ic">🪟</div><div class="empty-tx">まだキャラクターがいません<br>＋ボタンから追加できます</div></div>`;
+    body.innerHTML=`<div class="empty-st"><div class="empty-ic">🪟</div><div class="empty-tx">まだキャラクタ--がいません<br>＋ボタンから追加できます</div></div>`;
   } else {
     body.innerHTML = chars.map(ch=>`
       <div class="char-item" onclick="openChar('${ch.id}')">
@@ -1000,7 +1000,7 @@ function openChar(id) {
       <div class="detail-row"><div class="detail-lbl">名前</div><div class="detail-val">${esc(ch.name)}</div></div>
       <div class="detail-row"><div class="detail-lbl">所属</div><div class="detail-val">${fp.name} ${room.name.replace('\n','')}</div></div>
       ${ch.info?`<div class="detail-row"><div class="detail-lbl">その他情報</div><div class="detail-val">${esc(ch.info)}</div></div>`:''}
-      <button class="btn-del" onclick="deleteChar('${ch.id}')">このキャラクターを削除</button>
+      <button class="btn-del" onclick="deleteChar('${ch.id}')">このキャラクタ--を削除</button>
     </div>`;
   showPanel('charPanel');
 }
