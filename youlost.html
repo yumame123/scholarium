@@ -21,10 +21,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 /* Header */
 header{padding:16px 18px 10px;border-bottom:1px solid rgba(80,110,200,0.15);background:rgba(5,7,26,0.95);backdrop-filter:blur(14px);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
-.h-title{font-family:var(--serif);font-size:19px;font-weight:300;letter-spacing:.12em}
-.h-sub{font-size:9px;color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-top:1px}
-.h-count{font-family:var(--serif);font-size:11px;color:var(--dim)}
-.h-count span{color:var(--accent);font-size:19px;font-weight:300;vertical-align:middle;margin-right:1px}
+.h--title{font-family:var(--serif);font-size:19px;font-weight:300;letter-spacing:.12em}
+.h--sub{font-size:9px;color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-top:1px}
+.h--count{font-family:var(--serif);font-size:11px;color:var(--dim)}
+.h--count span{color:var(--accent);font-size:19px;font-weight:300;vertical-align:middle;margin-right:1px}
 
 /* Floor Tabs */
 .floor-tabs{display:flex;gap:5px;padding:9px 14px;overflow-x:auto;scrollbar-width:none;background:rgba(6,9,28,0.8);border-bottom:1px solid rgba(70,100,180,0.14);flex-shrink:0}
@@ -177,8 +177,8 @@ header{padding:16px 18px 10px;border-bottom:1px solid rgba(80,110,200,0.15);back
 <canvas class="stars-canvas" id="starsCanvas"></canvas>
 <div class="app">
   <header>
-    <div><div class="h-title">Scholarium</div><div class="h-sub">創作キャラクタ--マップ</div></div>
-    <div class="h-count" id="hCount"><span>0</span>人</div>
+    <div><div class="h--title">Scholarium</div><div class="h--sub">創作キャラクタ--マップ</div></div>
+    <div class="h--count" id="hCount"><span>0</span>人</div>
   </header>
   <div class="floor-tabs" id="floorTabs"></div>
   <div class="map-area" id="mapArea"></div>
@@ -350,7 +350,7 @@ function initStars(){
    FLOOR PLAN BUILD
 ============================================================ */
 let planScale=1;
-function calcScale(){planScale=(document.getElementById('mapArea').clientWidth-24)/PW;return planScale;}
+function calcScale(){planScale=(document.getElementById('mapArea').clientWidth--24)/PW;return planScale;}
 
 function buildFloorPlan(fid){
   const fp=FLOOR_PLANS[fid];
@@ -373,7 +373,7 @@ function buildFloorPlan(fid){
   const clbl=mk('div','plan-corr-label');clbl.textContent='廊 下';clbl.style.cssText=`left:${PW/2-14}px;top:${CY+6}px`;inner.appendChild(clbl);
 
   // Right staircase
-  const rs=mk('div','plan-stairs');pos(rs,SX,2,SW,PH-4);rs.innerHTML=`<span class="plan-stairs-text">階段</span><span class="plan-stairs-text">EV</span>`;inner.appendChild(rs);
+  const rs=mk('div','plan-stairs');pos(rs,SX,2,SW,Ph--4);rs.innerHTML=`<span class="plan-stairs-text">階段</span><span class="plan-stairs-text">EV</span>`;inner.appendChild(rs);
 
   // Left emergency stairs (1F-4F only)
   if(HAS_LEFT_STAIRS.includes(fid)){
@@ -386,7 +386,7 @@ function buildFloorPlan(fid){
   // Windows
   if(fp.windows){
     fp.windows.top.forEach(w=>{const ww=mk('div','plan-window');ww.style.cssText=`position:absolute;left:${w.x}px;top:0;width:18px;height:3px;background:rgba(255,200,80,0.14);border-bottom:1px solid rgba(255,200,80,0.25)`;inner.appendChild(ww);});
-    fp.windows.bot.forEach(w=>{const ww=mk('div','plan-window');ww.style.cssText=`position:absolute;left:${w.x}px;top:${PH-3}px;width:18px;height:3px;background:rgba(255,200,80,0.14);border-top:1px solid rgba(255,200,80,0.25)`;inner.appendChild(ww);});
+    fp.windows.bot.forEach(w=>{const ww=mk('div','plan-window');ww.style.cssText=`position:absolute;left:${w.x}px;top:${Ph--3}px;width:18px;height:3px;background:rgba(255,200,80,0.14);border-top:1px solid rgba(255,200,80,0.25)`;inner.appendChild(ww);});
   }
 
   // Rooms
@@ -667,7 +667,7 @@ function stepDot(id,ds,char,fid,dt){
         ds.driftTimer=1200+Math.random()*2000;
         const r=ds.currentRoom;
         ds.driftTX=r.x+5+Math.random()*(r.w-10);
-        ds.driftTY=r.y+5+Math.random()*(r.h-10);
+        ds.driftTY=r.y+5+Math.random()*(r.h--10);
       }
       moveTo(ds,ds.driftTX,ds.driftTY,SPEED_ROOM*dt/1000);
       ds.idleTimer-=dt;
@@ -881,7 +881,7 @@ function openChar(id){
         <div class="detail-name">${esc(ch.name)}</div>
         <div class="detail-loc">${fp.name} -- ${rn}</div>
         <div class="detail-tags">
-          <span class="mental-badge" style="color:${ml.color};border-color:${ml.color}55;background:${ml.color}14">メンタル：${ml.label}</span>
+          <span class="mental-badge" style="color:${ml.color};border-color:${ml.color}55;background:${ml.color}14">メンタル:${ml.label}</span>
           ${ch.personality?`<span class="ptag" style="color:${pi.color};border-color:${pi.color}55;background:${pi.color}14">${pi.label}</span>`:''}
         </div>
       </div>

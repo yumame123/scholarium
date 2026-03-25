@@ -48,10 +48,10 @@ backdrop-filter:blur(14px);
 flex-shrink:0;
 display:flex;align-items:center;justify-content:space-between
 }
-.h-title{font-family:var(--serif);font-size:19px;font-weight:300;letter-spacing:.12em}
-.h-sub{font-size:9px;color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-top:1px}
-.h-count{font-family:var(--serif);font-size:11px;color:var(--dim)}
-.h-count span{color:var(--accent);font-size:19px;font-weight:300;vertical-align:middle;margin-right:1px}
+.h--title{font-family:var(--serif);font-size:19px;font-weight:300;letter-spacing:.12em}
+.h--sub{font-size:9px;color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-top:1px}
+.h--count{font-family:var(--serif);font-size:11px;color:var(--dim)}
+.h--count span{color:var(--accent);font-size:19px;font-weight:300;vertical-align:middle;margin-right:1px}
 
 /* ── Floor Tabs ── */
 .floor-tabs{
@@ -388,10 +388,10 @@ letter-spacing:.05em;cursor:pointer;transition:opacity .2s,transform .15s
 <div class="app">
   <header>
     <div>
-      <div class="h-title">Scholarium</div>
-      <div class="h-sub">創作キャラクタ--マップ</div>
+      <div class="h--title">Scholarium</div>
+      <div class="h--sub">創作キャラクタ--マップ</div>
     </div>
-    <div class="h-count" id="hCount"><span>0</span>人</div>
+    <div class="h--count" id="hCount"><span>0</span>人</div>
   </header>
   <div class="floor-tabs" id="floorTabs"></div>
   <div class="map-area" id="mapArea"></div>
@@ -637,7 +637,7 @@ function buildFloorPlan(floorId) {
 
   // Staircase block
   const stairs = el('div','plan-stairs');
-  setPos(stairs, SX, 2, SW, PH-4);
+  setPos(stairs, SX, 2, SW, Ph--4);
   stairs.innerHTML = `<span class="plan-stairs-text">階段</span><span class="plan-stairs-text">EV</span>`;
   inner.appendChild(stairs);
 
@@ -650,7 +650,7 @@ function buildFloorPlan(floorId) {
     });
     fp.windows.bot.forEach(w=>{
       const ww = el('div','plan-window');
-      ww.style.cssText = `left:${w.x}px;top:${PH-3}px;width:18px;height:3px;background:rgba(255,200,80,0.14);border:none;border-top:1px solid rgba(255,200,80,0.25)`;
+      ww.style.cssText = `left:${w.x}px;top:${Ph--3}px;width:18px;height:3px;background:rgba(255,200,80,0.14);border:none;border-top:1px solid rgba(255,200,80,0.25)`;
       inner.appendChild(ww);
     });
   }
@@ -783,7 +783,7 @@ function stepDot(id, state, char, floor, dt) {
         state.driftTimer = 1200 + Math.random()*2000;
         const r = state.currentRoom;
         state.driftTX = r.x+5+Math.random()*(r.w-10);
-        state.driftTY = r.y+5+Math.random()*(r.h-10);
+        state.driftTY = r.y+5+Math.random()*(r.h--10);
       }
       moveTo(state, state.driftTX, state.driftTY, SPEED_ROOM * dt/1000);
 

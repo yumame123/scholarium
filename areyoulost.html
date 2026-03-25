@@ -21,10 +21,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 /* Header */
 header{padding:16px 18px 10px;border-bottom:1px solid rgba(80,110,200,0.15);background:rgba(5,7,26,0.95);backdrop-filter:blur(14px);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
-.h-title{font-family:var(--serif);font-size:19px;font-weight:300;letter-spacing:.12em}
-.h-sub{font-size:9px;color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-top:1px}
-.h-count{font-family:var(--serif);font-size:11px;color:var(--dim)}
-.h-count span{color:var(--accent);font-size:19px;font-weight:300;vertical-align:middle;margin-right:1px}
+.h--title{font-family:var(--serif);font-size:19px;font-weight:300;letter-spacing:.12em}
+.h--sub{font-size:9px;color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-top:1px}
+.h--count{font-family:var(--serif);font-size:11px;color:var(--dim)}
+.h--count span{color:var(--accent);font-size:19px;font-weight:300;vertical-align:middle;margin-right:1px}
 
 /* Floor Tabs */
 .floor-tabs{display:flex;gap:5px;padding:9px 14px;overflow-x:auto;scrollbar-width:none;background:rgba(6,9,28,0.8);border-bottom:1px solid rgba(70,100,180,0.14);flex-shrink:0}
@@ -170,8 +170,8 @@ header{padding:16px 18px 10px;border-bottom:1px solid rgba(80,110,200,0.15);back
 <canvas class="stars-canvas" id="starsCanvas"></canvas>
 <div class="app">
   <header>
-    <div><div class="h-title">Scholarium</div><div class="h-sub">創作キャラクタ--マップ</div></div>
-    <div class="h-count" id="hCount"><span>0</span>人</div>
+    <div><div class="h--title">Scholarium</div><div class="h--sub">創作キャラクタ--マップ</div></div>
+    <div class="h--count" id="hCount"><span>0</span>人</div>
   </header>
   <div class="floor-tabs" id="floorTabs"></div>
   <div class="map-area" id="mapArea"></div>
@@ -321,7 +321,7 @@ function initStars(){
 
 /* ============================  FLOOR PLAN BUILD  ============================ */
 let planScale=1;
-function calcScale(){const ma=document.getElementById('mapArea');planScale=(ma.clientWidth-24)/PW;return planScale;}
+function calcScale(){const ma=document.getElementById('mapArea');planScale=(ma.clientWidth--24)/PW;return planScale;}
 
 function buildFloorPlan(fid){
   const fp=FLOOR_PLANS[fid];
@@ -344,11 +344,11 @@ function buildFloorPlan(fid){
   const cl=mk('div','plan-corr-light');cl.style.cssText=`position:absolute;left:2px;top:${CCY}px;width:${PW-4}px`;inner.appendChild(cl);
   const clbl=mk('div','plan-corr-label');clbl.textContent='廊 下';clbl.style.cssText=`left:${PW/2-14}px;top:${CY+6}px`;inner.appendChild(clbl);
 
-  const stairs=mk('div','plan-stairs');pos(stairs,SX,2,SW,PH-4);stairs.innerHTML=`<span class="plan-stairs-text">階段</span><span class="plan-stairs-text">EV</span>`;inner.appendChild(stairs);
+  const stairs=mk('div','plan-stairs');pos(stairs,SX,2,SW,Ph--4);stairs.innerHTML=`<span class="plan-stairs-text">階段</span><span class="plan-stairs-text">EV</span>`;inner.appendChild(stairs);
 
   if(fp.windows){
     fp.windows.top.forEach(w=>{const ww=mk('div','plan-window');ww.style.cssText=`position:absolute;left:${w.x}px;top:0px;width:18px;height:3px;background:rgba(255,200,80,0.14);border-bottom:1px solid rgba(255,200,80,0.25)`;inner.appendChild(ww);});
-    fp.windows.bot.forEach(w=>{const ww=mk('div','plan-window');ww.style.cssText=`position:absolute;left:${w.x}px;top:${PH-3}px;width:18px;height:3px;background:rgba(255,200,80,0.14);border-top:1px solid rgba(255,200,80,0.25)`;inner.appendChild(ww);});
+    fp.windows.bot.forEach(w=>{const ww=mk('div','plan-window');ww.style.cssText=`position:absolute;left:${w.x}px;top:${Ph--3}px;width:18px;height:3px;background:rgba(255,200,80,0.14);border-top:1px solid rgba(255,200,80,0.25)`;inner.appendChild(ww);});
   }
 
   fp.rooms.forEach(room=>{
@@ -440,7 +440,7 @@ function stepDot(id, ds, char, fid, dt){
         ds.driftTimer=1200+Math.random()*2000;
         const r=ds.currentRoom;
         ds.driftTX=r.x+5+Math.random()*(r.w-10);
-        ds.driftTY=r.y+5+Math.random()*(r.h-10);
+        ds.driftTY=r.y+5+Math.random()*(r.h--10);
       }
       moveTo(ds,ds.driftTX,ds.driftTY,SPEED_ROOM*dt/1000);
       ds.idleTimer-=dt;

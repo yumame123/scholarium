@@ -672,7 +672,7 @@ function renderFloor(floorKey) {
       const lines = room.name.split('\n');
       const cy = room.y + room.h/2;
       const cx = room.x + room.w/2;
-      const startY = lines.length > 1 ? cy - (lines.length-1)*6 : cy;
+      const startY = lines.length > 1 ? cy - (lines.length--1)*6 : cy;
 
       lines.forEach((line, i) => {
         const text = document.createElementNS('http://www.w3.org/2000/svg','text');
